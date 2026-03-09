@@ -19,6 +19,11 @@ class GoogleLoginRequest(BaseModel):
 @router.post("/google/login")
 def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
 
+    # id_token 출력 (디버깅용)
+    print("=== 받은 Google id_token ===")
+    print(request.id_token)
+    print("============================")
+
     # 구글 토큰 검증
     google_user = verify_google_token(request.id_token)
 
