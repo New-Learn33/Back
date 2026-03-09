@@ -7,29 +7,36 @@ from app.models.user import User
 from app.services.google_auth_service import verify_google_token
 from app.core.security import create_access_token
 
+# 라우터 생성
 router = APIRouter()
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
 
+# 로그인 API
 @router.post("/google/login")
 def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
+
+    # 구글 토큰 검증
     google_user = verify_google_token(request.id_token)
 
     if not google_user:
         raise HTTPException(status_code=401, detail="유효하지 않은 구글 토큰입니다.")
 
+    # provider 정보 설정
     provider = "google"
     provider_id = google_user.get("sub")
 
     if not provider_id:
         raise HTTPException(status_code=400, detail="구글 사용자 식별값이 없습니다.")
 
+    # DB에서 기존 유저 찾기
     user = db.query(User).filter(
         User.provider == provider,
         User.provider_id == provider_id
     ).first()
 
+    # 신규 회원 생성 ->  DB에 없으면 회원가입
     if not user:
         user = User(
             email=google_user.get("email"),
@@ -39,9 +46,12 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
             provider=provider,
             provider_id=provider_id,
         )
+
+        # DB 저장
         db.add(user)
         db.commit()
         db.refresh(user)
+
     else:
         user.email = google_user.get("email")
         user.name = google_user.get("name")
@@ -49,11 +59,13 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
+    # JWT 발급
     access_token = create_access_token({
         "user_id": user.id,
         "email": user.email
     })
 
+    # 사용자 정보 반환
     return {
         "access_token": access_token,
         "token_type": "bearer",

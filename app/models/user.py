@@ -2,6 +2,7 @@ from sqlalchemy import BigInteger, Column, String, DateTime
 from sqlalchemy.sql import func
 from app.db.database import Base
 
+# 구글 로그인한 사용자를 저장
 class User(Base):
     __tablename__ = "users"
 
