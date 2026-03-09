@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.services.google_auth_service import verify_google_token
 from app.core.security import create_access_token
+from app.utils.error_response import error_response
 
 # 라우터 생성
 router = APIRouter()
@@ -22,14 +23,22 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
     google_user = verify_google_token(request.id_token)
 
     if not google_user:
-        raise HTTPException(status_code=401, detail="유효하지 않은 구글 토큰입니다.")
+        return error_response(
+            401,
+            "REQUEST_003",
+            "유효하지 않은 JWT입니다."
+        )
 
     # provider 정보 설정
     provider = "google"
     provider_id = google_user.get("sub")
 
     if not provider_id:
-        raise HTTPException(status_code=400, detail="구글 사용자 식별값이 없습니다.")
+        return error_response(
+            400,
+            "REQUEST_001",
+            "잘못된 요청입니다."
+        )
 
     # DB에서 기존 유저 찾기
     user = db.query(User).filter(
@@ -62,7 +71,11 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
 
     except SQLAlchemyError:
         db.rollback()
-        raise HTTPException(status_code=500, detail="데이터베이스 처리 중 오류가 발생했습니다.")
+        return error_response(
+            500,
+            "RESPONSE_001",
+            "서버와의 연결에 실패했습니다."
+        )
 
     # JWT 발급
     access_token = create_access_token({
