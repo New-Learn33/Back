@@ -8,6 +8,7 @@ from app.models.user import User
 from app.services.google_auth_service import verify_google_token
 from app.core.security import create_access_token
 from app.utils.error_response import error_response
+from app.utils.success_response import success_response
 
 # 라우터 생성
 router = APIRouter()
@@ -89,7 +90,8 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
     })
 
     # 사용자 정보 반환
-    return {
+    return success_response(
+    data={
         "access_token": access_token,
         "token_type": "bearer",
         "user": {
@@ -101,4 +103,6 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
             "provider": user.provider,
             "provider_id": user.provider_id,
         }
-    }
+    },
+    message="로그인 성공"
+)
