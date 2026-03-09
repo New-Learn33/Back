@@ -26,7 +26,7 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
         return error_response(
             401,
             "REQUEST_003",
-            "유효하지 않은 JWT입니다."
+            "유효하지 않은 구글 토큰입니다."
         )
 
     # provider 정보 설정
