@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.db.database import Base, engine
 from app.models.user import User
@@ -6,6 +7,15 @@ from app.models.user import User
 app = FastAPI(
     title="NewLearn API",
     version="1.0"
+)
+
+# CORS 설정 - 프론트엔드에서 백엔드 API 호출 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
