@@ -8,39 +8,32 @@ class SceneScriptItem(BaseModel):
     subtitle_text: str = Field(..., example="예상치 못한 재회")
 
 
-class ScriptGenerateRequest(BaseModel):
+class GenerationRequest(BaseModel):
     category_id: int = Field(..., example=1)
-    prompt: str = Field(..., example="지하철에서 우연히 다시 만난 두 사람의 어색한 재회")
-
-
-class ScriptGenerateData(BaseModel):
-    job_id: int = Field(..., example=1)
-    scenes: List[SceneScriptItem]
-
-
-class ScriptGenerateResponse(BaseModel):
-    success: bool = True
-    message: str = "3컷 대사 생성 성공"
-    data: ScriptGenerateData
-
-
-class ImageGenerateRequest(BaseModel):
-    job_id: int = Field(..., example=1)
-    template_image_id: int = Field(..., example=101)
-    scenes: List[SceneScriptItem]
+    prompt: str = Field(..., example="세상이 멸망하는데 히어로가 늦잠을 잤다")
 
 
 class ImageResultItem(BaseModel):
     scene_order: int = Field(..., example=1)
-    image_url: str = Field(..., example="https://example.com/image1.png")
+    image_url: str = Field(..., example="https://example.com/generated/1_1.png")
 
 
-class ImageGenerateData(BaseModel):
-    job_id: int = Field(..., example=1)
+class SelectedTemplateImage(BaseModel):
+    id: int = Field(..., example=101)
+    name: str = Field(..., example="애니 캐릭터 1")
+    image_url: str = Field(..., example="https://example.com/anime1.png")
+
+
+class GenerationData(BaseModel):
+    job_id: int
+    title: str
+    category_id: int
+    selected_template_image: SelectedTemplateImage
+    scenes: List[SceneScriptItem]
     images: List[ImageResultItem]
 
 
-class ImageGenerateResponse(BaseModel):
+class GenerationResponse(BaseModel):
     success: bool = True
-    message: str = "3컷 이미지 생성 성공"
-    data: ImageGenerateData
+    message: str = "3컷 생성 성공"
+    data: GenerationData

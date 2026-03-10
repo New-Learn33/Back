@@ -22,3 +22,6 @@ uvicorn==0.41.0
 google-auth==2.41.1
 python-jose[cryptography]==3.5.0
 requests
+
+#대본 AI
+openai==1.66.0
