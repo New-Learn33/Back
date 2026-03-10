@@ -1,5 +1,6 @@
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
+from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
 
@@ -9,6 +10,15 @@ SECRET_KEY = os.getenv("JWT_SECRET")
 # JWT 서명 알고리즘
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
+
+# 비밀번호 해싱
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 # JWT 만드는 함수
 def create_access_token(data: dict):

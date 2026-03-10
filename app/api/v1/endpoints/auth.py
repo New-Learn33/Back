@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.db.database import get_db
 from app.models.user import User
 from app.services.google_auth_service import verify_google_token
-from app.core.security import create_access_token, decode_access_token
+from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 
@@ -21,6 +21,15 @@ security = HTTPBearer(auto_error=False)
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 # 현재 로그인한 사용자 정보를 조회하는 공통 함수
 def get_current_user(
@@ -159,6 +168,112 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
     },
     message="로그인 성공"
 )
+
+# 이메일 회원가입 API
+@router.post("/signup")
+def signup(request: SignupRequest, db: Session = Depends(get_db)):
+
+    # 이메일 중복 체크
+    existing_user = db.query(User).filter(User.email == request.email).first()
+    if existing_user:
+        return error_response(
+            409,
+            "REQUEST_004",
+            "이미 사용 중인 이메일입니다."
+        )
+
+    try:
+        # 유저 생성
+        user = User(
+            email=request.email,
+            name=request.name,
+            nickname=request.name,
+            password_hash=hash_password(request.password),
+            provider="email",
+            provider_id=request.email,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    except SQLAlchemyError:
+        db.rollback()
+        return error_response(
+            500,
+            "RESPONSE_001",
+            "서버와의 연결에 실패했습니다."
+        )
+
+    # JWT 발급
+    access_token = create_access_token({
+        "user_id": user.id,
+        "email": user.email
+    })
+
+    return success_response(
+        data={
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "nickname": user.nickname,
+                "profile_image_url": user.profile_image_url,
+                "provider": user.provider,
+                "provider_id": user.provider_id,
+            }
+        },
+        message="회원가입 성공"
+    )
+
+# 이메일 로그인 API
+@router.post("/login")
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+
+    # 이메일로 유저 조회
+    user = db.query(User).filter(
+        User.email == request.email,
+        User.provider == "email"
+    ).first()
+
+    if not user:
+        return error_response(
+            401,
+            "REQUEST_005",
+            "이메일 또는 비밀번호가 올바르지 않습니다."
+        )
+
+    # 비밀번호 검증
+    if not user.password_hash or not verify_password(request.password, user.password_hash):
+        return error_response(
+            401,
+            "REQUEST_005",
+            "이메일 또는 비밀번호가 올바르지 않습니다."
+        )
+
+    # JWT 발급
+    access_token = create_access_token({
+        "user_id": user.id,
+        "email": user.email
+    })
+
+    return success_response(
+        data={
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "nickname": user.nickname,
+                "profile_image_url": user.profile_image_url,
+                "provider": user.provider,
+                "provider_id": user.provider_id,
+            }
+        },
+        message="로그인 성공"
+    )
 
 # 현재 로그인한 사용자 정보 조회 API
 @router.get("/me")
