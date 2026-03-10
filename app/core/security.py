@@ -1,4 +1,4 @@
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
@@ -21,3 +21,14 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     # payload를 SECRET_KEY로 서명해서 문자열 토큰으로 변환
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+# JWT decode 함수
+def decode_access_token(token: str):
+    if not SECRET_KEY:
+        raise ValueError("JWT_SECRET is not set")
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
