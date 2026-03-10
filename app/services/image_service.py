@@ -1,19 +1,45 @@
-def build_image_prompt(
-    category_hint: str,
-    character_name: str,
-    scene_order: int,
-    dialogue: str,
-    subtitle_text: str,
-) -> str:
+import os
+import base64
+from uuid import uuid4
+from dotenv import load_dotenv
+from openai import OpenAI
+from fastapi import HTTPException
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+GENERATED_DIR = os.path.join(STATIC_DIR, "generated")
+
+os.makedirs(GENERATED_DIR, exist_ok=True)
+
+
+def build_image_prompt(category_hint: str, character_name: str, scene_order: int, dialogue: str, subtitle_text: str) -> str:
     return (
-        f"webtoon style, {category_hint}, main character {character_name}, "
-        f"scene {scene_order}, {subtitle_text}, emotional atmosphere, "
-        f"dialogue mood: {dialogue}"
+        f"{category_hint}, same character consistency, "
+        f"main character: {character_name}, "
+        f"webtoon style, scene {scene_order}, "
+        f"{subtitle_text}, emotion based on dialogue: {dialogue}"
     )
 
 
+def save_b64_image_to_file(b64_data: str, filename: str) -> str:
+    file_path = os.path.join(GENERATED_DIR, filename)
+
+    with open(file_path, "wb") as f:
+        f.write(base64.b64decode(b64_data))
+
+    return f"/static/generated/{filename}"
+
+
 def generate_three_cut_images(job_id: int, template_info: dict, scenes: list):
-    images = []
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
+
+    results = []
 
     for scene in scenes:
         prompt = build_image_prompt(
@@ -24,17 +50,31 @@ def generate_three_cut_images(job_id: int, template_info: dict, scenes: list):
             subtitle_text=scene["subtitle_text"],
         )
 
-        # TODO:
-        # 나중에 여기서 실제 이미지 생성 API(OpenAI Images / Gemini 등) 호출
-        # 지금은 목업 URL만 반환
-        image_url = f"https://example.com/generated/{job_id}_{scene['scene_order']}.png"
+        try:
+            response = client.images.generate(
+                model="gpt-image-1",
+                prompt=prompt,
+                size="1024x1024",
+                quality="medium",
+            )
 
-        images.append(
-            {
-                "scene_order": scene["scene_order"],
-                "image_url": image_url,
-                "prompt_used": prompt,
-            }
-        )
+            if not response.data or not response.data[0].b64_json:
+                raise HTTPException(status_code=500, detail="이미지 생성 응답이 비어 있습니다.")
 
-    return images
+            filename = f"{job_id}_{scene['scene_order']}_{uuid4().hex}.png"
+            image_url = save_b64_image_to_file(response.data[0].b64_json, filename)
+
+            results.append(
+                {
+                    "scene_order": scene["scene_order"],
+                    "image_url": image_url,
+                    "prompt_used": prompt,
+                }
+            )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"이미지 생성 실패: {str(e)}")
+
+    return results
