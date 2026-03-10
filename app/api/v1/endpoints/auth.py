@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
+
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,15 +9,65 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.db.database import get_db
 from app.models.user import User
 from app.services.google_auth_service import verify_google_token
-from app.core.security import create_access_token
+from app.core.security import create_access_token, decode_access_token
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 
 # 라우터 생성
 router = APIRouter()
 
+# Authorization: Bearer <token> 형식의 헤더를 받기 위한 보안 스키마
+security = HTTPBearer(auto_error=False)
+
 class GoogleLoginRequest(BaseModel):
     id_token: str
+
+# 현재 로그인한 사용자 정보를 조회하는 공통 함수
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    # Authorization 헤더가 없는 경우
+    if not credentials:
+        return error_response(
+            401,
+            "REQUEST_002",
+            "JWT를 입력해주세요."
+        )
+
+    token = credentials.credentials
+    payload = decode_access_token(token)
+
+    # JWT decode 실패 또는 만료/위조된 토큰인 경우
+    if not payload:
+        return error_response(
+            401,
+            "REQUEST_003",
+            "유효하지 않은 JWT입니다."
+        )
+
+    user_id = payload.get("user_id")
+
+    # 토큰 payload에 user_id가 없는 경우
+    if not user_id:
+        return error_response(
+            401,
+            "REQUEST_003",
+            "유효하지 않은 JWT입니다."
+        )
+
+     # 토큰에 담긴 user_id로 DB에서 사용자 조회
+    user = db.query(User).filter(User.id == int(user_id)).first()
+
+    # 해당 유저가 존재하지 않는 경우
+    if not user:
+        return error_response(
+            404,
+            "REQUEST_007",
+            "잘못된 접근입니다."
+        )
+
+    return user
 
 # 로그인 API
 @router.post("/google/login")
@@ -106,3 +159,35 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
     },
     message="로그인 성공"
 )
+
+# 현재 로그인한 사용자 정보 조회 API
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user)):
+
+    if isinstance(current_user, JSONResponse):
+        return current_user
+    
+    return success_response(
+        data={
+            "id": current_user.id,
+            "email": current_user.email,
+            "name": current_user.name,
+            "nickname": current_user.nickname,
+            "profile_image_url": current_user.profile_image_url,
+            "provider": current_user.provider,
+            "provider_id": current_user.provider_id,
+        },
+        message="내 정보 조회 성공"
+    )
+
+# 로그아웃 API
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user)):
+
+    if isinstance(current_user, JSONResponse):
+        return current_user
+    
+    return success_response(
+        data={},
+        message="로그아웃 성공"
+    )
