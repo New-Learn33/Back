@@ -23,6 +23,9 @@ google-auth==2.41.1
 python-jose[cryptography]==3.5.0
 requests
 
+#대본 AI
+openai==1.66.0
+
 #이메일 회원가입/로그인 (비밀번호 해싱)
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1

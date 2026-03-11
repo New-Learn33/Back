@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.db.database import Base, engine
@@ -27,3 +28,5 @@ Base.metadata.create_all(bind=engine)
 
 # 라우터 연결
 app.include_router(api_router, prefix="/api/v1")
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
