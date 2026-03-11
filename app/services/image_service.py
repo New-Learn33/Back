@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from fastapi import HTTPException
 
-load_dotenv()
+load_dotenv(override=True)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
