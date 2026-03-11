@@ -129,9 +129,10 @@ import random, os
 from fastapi import APIRouter
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
+from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
+from app.schemas.generation_schema import ThumbnailSelectRequest
 from app.services.script_service import generate_three_cut_script
 from app.services.image_service import generate_three_cut_images
-from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
 from app.utils.error_response import error_response
@@ -300,3 +301,26 @@ def render_video(request: RenderVideoRequest):
 
     except Exception as e:
         return error_response(500, "SERVER_001", str(e))
+
+# 썸네일 선택 (사진 중에 선택) API
+@router.post("/thumbnail/select")
+def select_thumbnail(request: ThumbnailSelectRequest):
+    try:
+        file_path = url_to_file_path(request.thumbnail_url)
+
+        if not os.path.exists(file_path):
+            return error_response(404, "REQUEST_007", "선택한 대표 이미지 파일이 존재하지 않습니다.")
+
+        # TODO: 나중에 DB 연결 시 generation_jobs.thumbnail_url 업데이트
+        # ex) update generation_job set thumbnail_url = request.thumbnail_url where id = request.job_id
+
+        return success_response(
+            {
+                "job_id": request.job_id,
+                "thumbnail_url": request.thumbnail_url
+            },
+            "대표 이미지 선택 성공"
+        )
+
+    except Exception:
+        return error_response(500, "SERVER_001", "대표 이미지 선택 중 오류가 발생했습니다.")
