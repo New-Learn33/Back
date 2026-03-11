@@ -14,3 +14,8 @@ venv/
 
 # mac
 .DS_Store
+
+# 생성 결과물들
+app/static/generated/*
+app/static/rendered/*
+app/static/videos/*
