@@ -125,12 +125,17 @@
 
 
 # 테스트용
-import random
-from fastapi import APIRouter, HTTPException
+import random, os
+from fastapi import APIRouter
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 from app.services.script_service import generate_three_cut_script
 from app.services.image_service import generate_three_cut_images
+from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
+from app.services.subtitle_render_service import render_subtitle_image
+from app.services.video_render_service import create_video_from_images
+from app.utils.error_response import error_response
+from app.utils.success_response import success_response
 
 router = APIRouter()
 
@@ -179,8 +184,8 @@ def generate_content(request: GenerationRequest):
     template_candidates = CATEGORY_TEMPLATE_MAP.get(request.category_id)
 
     if not template_candidates:
-        raise HTTPException(status_code=400, detail="유효하지 않은 category_id 입니다.")
-
+        return error_response(400, "REQUEST_001", "유효하지 않은 category_id 입니다.")
+    
     selected_template = random.choice(template_candidates)
 
     script_result = generate_three_cut_script(request)
@@ -215,3 +220,83 @@ def generate_content(request: GenerationRequest):
             ],
         },
     }
+
+
+def url_to_file_path(url: str):
+    clean = url.lstrip("/")
+    return os.path.join("app", clean)
+
+
+# 자막 합성 API
+@router.post("/render/subtitles")
+def render_subtitles(request: RenderSubtitleRequest):
+
+    try:
+        scene_map = {scene.scene_order: scene for scene in request.scenes}
+        results = []
+
+        for img in request.images:
+
+            # 현재 이미지와 같은 scene_order의 대사 찾기
+            scene = scene_map.get(img.scene_order)
+
+            if not scene:
+                return error_response(400, "REQUEST_001", "scene 정보가 없습니다.")
+
+            # URL을 실제 파일 경로로 바꿔줌
+            input_path = url_to_file_path(img.image_url)
+            output_path = f"app/static/rendered/{request.job_id}_{img.scene_order}.png"
+
+            # 실제 자막 합성 실행
+            render_subtitle_image(
+                input_path,
+                output_path,
+                scene.dialogue
+            )
+
+            results.append({
+                "scene_order": img.scene_order,
+                "image_url": f"/static/rendered/{request.job_id}_{img.scene_order}.png"
+            })
+
+        return success_response(
+            {
+                "job_id": request.job_id,
+                "subtitle_images": results
+            },
+            "자막 생성 성공"
+        )
+
+    except FileNotFoundError:
+        return error_response(404, "REQUEST_007", "이미지를 찾을 수 없습니다.")
+
+    except Exception as e:
+        return error_response(500, "SERVER_001", str(e))
+    
+
+# 영상 생성 API
+@router.post("/render/video")
+def render_video(request: RenderVideoRequest):
+
+    try:
+
+        # 컷 순서대로 정렬
+        sorted_images = sorted(request.subtitle_images, key=lambda x: x.scene_order)
+
+        image_paths = [url_to_file_path(i.image_url) for i in sorted_images]
+
+        output_path = f"app/static/videos/{request.job_id}.mp4"
+
+        # ffmpeg 실행
+        create_video_from_images(image_paths, output_path)
+
+        return success_response(
+            {
+                "job_id": request.job_id,
+                "video_url": f"/static/videos/{request.job_id}.mp4"
+            },
+            "영상 생성 성공"
+        )
+
+    except Exception as e:
+        return error_response(500, "SERVER_001", str(e))
