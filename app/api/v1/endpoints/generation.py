@@ -215,6 +215,10 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
         scenes=script_result["scenes"],
     )
 
+    job.status = "processing"
+    job.progress = 30
+    db.commit()
+
     return {
         "success": True,
         "message": "3컷 생성 성공",
@@ -276,7 +280,7 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
             })
 
         job.status = "processing"
-        job.progress = 50
+        job.progress = 60
         db.commit()
 
         return success_response(
@@ -308,7 +312,7 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
 
     try:
         job.status = "processing"
-        job.progress = 70
+        job.progress = 80
         db.commit()
 
         sorted_images = sorted(request.subtitle_images, key=lambda x: x.scene_order)
