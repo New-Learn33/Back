@@ -22,3 +22,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# 모든 모델 import 후 테이블 생성
+def init_db():
+    import app.models.user
+    import app.models.generation_job
+    import app.models.video
+
+    Base.metadata.create_all(bind=engine)
