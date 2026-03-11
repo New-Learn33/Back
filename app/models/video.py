@@ -11,10 +11,15 @@ class Video(Base):
     job_id = Column(Integer, ForeignKey("generation_jobs.id"), nullable=False)
     user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     category_id = Column(Integer, nullable=False)
+
     title = Column(String(200), nullable=False)
     prompt = Column(Text, nullable=True)
+
     thumbnail_url = Column(String(500), nullable=True)
     video_url = Column(String(500), nullable=False)
+
+    like_count = Column(Integer, default=0, nullable=False)
+    comment_count = Column(Integer, default=0, nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
