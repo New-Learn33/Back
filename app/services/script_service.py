@@ -1,114 +1,105 @@
 import os
 import json
 from dotenv import load_dotenv
-from fastapi import HTTPException
 from openai import OpenAI
-
-from app.schemas.generation_schema import GenerationRequest
+from fastapi import HTTPException
 
 load_dotenv(override=True)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-CATEGORY_STYLE = {
-    1: "애니 스타일. 감정 표현이 풍부하고 과장된 리액션, 밝고 생동감 있는 분위기",
-    2: "히어로 스타일. 정의감, 액션, 위기 해결, 강렬한 대사 중심",
-    3: "게임 스타일. 퀘스트, 전투, 레벨업, 게임 UI 감성의 대사",
-    4: "판타지 스타일. 마법, 왕국, 모험, 전설적인 분위기",
-}
 
+def validate_script_result(data: dict):
+    if "title" not in data:
+        raise HTTPException(status_code=500, detail="script 결과에 title이 없습니다.")
 
-def validate_scenes(scenes: list):
-    if len(scenes) != 3:
-        raise HTTPException(status_code=500, detail="scene 개수가 3개가 아닙니다.")
+    if "scenes" not in data or not isinstance(data["scenes"], list):
+        raise HTTPException(status_code=500, detail="script 결과에 scenes가 없습니다.")
+
+    if len(data["scenes"]) != 3:
+        raise HTTPException(status_code=500, detail="scenes는 반드시 3개여야 합니다.")
 
     expected_orders = [1, 2, 3]
-    actual_orders = [scene.get("scene_order") for scene in scenes]
+    actual_orders = [scene.get("scene_order") for scene in data["scenes"]]
 
     if actual_orders != expected_orders:
         raise HTTPException(status_code=500, detail="scene_order는 1,2,3 이어야 합니다.")
 
-    for scene in scenes:
-        if "dialogue" not in scene or "subtitle_text" not in scene:
-            raise HTTPException(status_code=500, detail="scene 형식이 올바르지 않습니다.")
+    for scene in data["scenes"]:
+        if "dialogue" not in scene:
+            raise HTTPException(status_code=500, detail="scene에 dialogue가 없습니다.")
+        if "subtitle_text" not in scene:
+            raise HTTPException(status_code=500, detail="scene에 subtitle_text가 없습니다.")
 
 
-def generate_three_cut_script(request: GenerationRequest):
+def generate_three_cut_script(request):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
 
-    category_style = CATEGORY_STYLE.get(request.category_id, "일반 웹툰 스타일")
+    system_prompt = """
+You are a screenplay writer for a 3-cut webtoon style comic.
 
-    system_prompt = f"""
-너는 3컷 웹툰 대사를 생성하는 AI다.
-카테고리 스타일: {category_style}
+Return ONLY valid JSON.
+Do not include markdown fences.
+Do not include explanations.
 
-반드시 아래 JSON 형식으로만 답변해라.
-
-{{
-  "title": "영상 제목",
+JSON schema:
+{
+  "title": "string",
   "scenes": [
-    {{
+    {
       "scene_order": 1,
-      "dialogue": "대사",
-      "subtitle_text": "장면 설명"
-    }},
-    {{
+      "dialogue": "string",
+      "subtitle_text": "string"
+    },
+    {
       "scene_order": 2,
-      "dialogue": "대사",
-      "subtitle_text": "장면 설명"
-    }},
-    {{
+      "dialogue": "string",
+      "subtitle_text": "string"
+    },
+    {
       "scene_order": 3,
-      "dialogue": "대사",
-      "subtitle_text": "장면 설명"
-    }}
+      "dialogue": "string",
+      "subtitle_text": "string"
+    }
   ]
-}}
+}
 
-규칙:
-- 반드시 scene은 3개
-- scene_order는 반드시 1, 2, 3
-- dialogue는 짧고 자연스럽게
-- subtitle_text는 해당 장면의 상황 설명
-- title은 매력적이고 짧게
-- JSON 외의 텍스트는 절대 출력하지 마라
+Rules:
+- Make exactly 3 scenes.
+- dialogue should be short and natural.
+- subtitle_text should describe only situation, action, and emotion.
+- Do NOT define or change appearance such as gender, hairstyle, outfit, accessories, body type, or colors.
+- Character visual identity is managed separately by the system.
+- Keep each scene visually distinct in action/emotion, but not in character identity.
 """
 
     user_prompt = f"""
-다음 프롬프트를 바탕으로 3컷 웹툰 대사를 생성해라.
+카테고리 ID: {request.category_id}
+사용자 프롬프트: {request.prompt}
 
-프롬프트:
-{request.prompt}
+위 정보를 바탕으로 3컷 만화 대사와 장면 설명을 생성해라.
 """
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=0.7,
-            messages=[
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
         )
 
-        content = response.choices[0].message.content
-        if not content:
-            raise HTTPException(status_code=500, detail="OpenAI 응답이 비어 있습니다.")
+        text = response.output_text.strip()
 
-        data = json.loads(content)
+        if text.startswith("```"):
+            text = text.replace("```json", "").replace("```", "").strip()
 
-        scenes = data.get("scenes", [])
-        validate_scenes(scenes)
+        data = json.loads(text)
+        validate_script_result(data)
+        return data
 
-        return {
-            "title": data.get("title", "제목 없음"),
-            "scenes": scenes,
-        }
-
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="OpenAI 응답 JSON 파싱 실패")
     except HTTPException:
         raise
     except Exception as e:

@@ -1,82 +1,43 @@
 from fastapi import APIRouter
-from app.schemas.category_schema import CategoryListResponse
+from app.data.character_profiles_loader import load_character_profiles
 
 router = APIRouter()
 
 
-@router.get("", response_model=CategoryListResponse)
+CATEGORY_META = {
+    "1": {"id": 1, "name": "ani", "description": "애니풍 캐릭터"},
+    "2": {"id": 2, "name": "hero", "description": "히어로풍 캐릭터"},
+    "3": {"id": 3, "name": "game", "description": "게임풍 캐릭터"},
+    "4": {"id": 4, "name": "fantasy", "description": "판타지풍 캐릭터"},
+}
+
+
+@router.get("")
 def get_categories():
+    profiles = load_character_profiles()
+
+    result = []
+    for category_id, meta in CATEGORY_META.items():
+        characters = profiles.get(category_id, [])
+
+        result.append(
+            {
+                "id": meta["id"],
+                "name": meta["name"],
+                "description": meta["description"],
+                "template_images": [
+                    {
+                        "id": character["id"],
+                        "name": character["name"],
+                        "image_url": character["image_url"],
+                    }
+                    for character in characters
+                ],
+            }
+        )
+
     return {
         "success": True,
         "message": "카테고리 목록 조회 성공",
-        "data": [
-            {
-                "id": 1,
-                "name": "애니",
-                "description": "감정 표현이 크고 애니메이션풍 연출",
-                "template_images": [
-                    {
-                        "id": 101,
-                        "image_url": "https://example.com/anime1.png",
-                        "name": "애니 캐릭터 1"
-                    },
-                    {
-                        "id": 102,
-                        "image_url": "https://example.com/anime2.png",
-                        "name": "애니 캐릭터 2"
-                    }
-                ]
-            },
-            {
-                "id": 2,
-                "name": "히어로",
-                "description": "정의, 액션, 구출 장면 중심",
-                "template_images": [
-                    {
-                        "id": 201,
-                        "image_url": "https://example.com/hero1.png",
-                        "name": "히어로 캐릭터 1"
-                    },
-                    {
-                        "id": 202,
-                        "image_url": "https://example.com/hero2.png",
-                        "name": "히어로 캐릭터 2"
-                    }
-                ]
-            },
-            {
-                "id": 3,
-                "name": "게임",
-                "description": "퀘스트, 전투, 레벨업 분위기",
-                "template_images": [
-                    {
-                        "id": 301,
-                        "image_url": "https://example.com/game1.png",
-                        "name": "게임 캐릭터 1"
-                    },
-                    {
-                        "id": 302,
-                        "image_url": "https://example.com/game2.png",
-                        "name": "게임 캐릭터 2"
-                    }
-                ]
-            },
-            {
-                "id": 4,
-                "name": "판타지",
-                "description": "마법, 왕국, 모험 분위기",
-                "template_images": [
-                    {
-                        "id": 401,
-                        "image_url": "https://example.com/fantasy1.png",
-                        "name": "판타지 캐릭터 1"
-                    },
-                    {
-                        "id": 402,
-                        "image_url": "https://example.com/fantasy2.png",
-                        "name": "판타지 캐릭터 2"
-                    }
-                ]
-            }
-        ]
+        "data": result,
     }

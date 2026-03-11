@@ -19,7 +19,7 @@ class ImageResultItem(BaseModel):
 
 
 class SelectedTemplateImage(BaseModel):
-    id: int = Field(..., example=101)
+    id: str = Field(..., example=101)
     name: str = Field(..., example="애니 캐릭터 1")
     image_url: str = Field(..., example="https://example.com/anime1.png")
 
