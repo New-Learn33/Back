@@ -4,8 +4,13 @@ from app.models.video import Video
 from app.models.video_like import VideoLike
 
 
-def list_videos(db: Session):
-    return db.query(Video).order_by(Video.like_count.desc(), Video.created_at.desc()).all()
+def list_videos(db: Session, sort: str = "popular"):
+    query = db.query(Video)
+
+    if sort == "latest":
+        return query.order_by(Video.created_at.desc()).all()
+
+    return query.order_by(Video.like_count.desc(), Video.created_at.desc()).all()
 
 
 def search_videos_by_title(db: Session, keyword: str):

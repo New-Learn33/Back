@@ -77,11 +77,12 @@ def serialize_video_detail_item(video, like_count: int, comment_count: int, like
 
 @router.get("/videos", response_model=VideoListResponse)
 def get_videos(
+    sort: str = Query("popular", pattern="^(popular|latest)$"),
     db: Session = Depends(get_db),
     user_id: int | None = Depends(get_optional_user_id),
 ):
     try:
-        video_rows = list_videos(db)
+        video_rows = list_videos(db, sort=sort)
         liked_video_ids = (
             get_liked_video_ids(db, user_id, [video.id for video in video_rows])
             if user_id
