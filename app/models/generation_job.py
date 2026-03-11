@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, BigInteger, ForeignKey, Text
 from datetime import datetime
 from app.db.database import Base
 
@@ -9,6 +9,9 @@ class GenerationJob(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=True)
     category_id = Column(Integer, nullable=True)
+
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=True)
+    prompt = Column(Text, nullable=True)
 
     # job 상태
     # pending    : 생성 요청 후 아직 처리 시작 전

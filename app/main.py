@@ -6,6 +6,9 @@ from app.db.database import Base, engine
 from app.models.comment import Comment
 from app.models.like import Like
 from app.models.user import User
+from app.db.database import init_db
+
+init_db()
 
 app = FastAPI(
     title="NewLearn API",
