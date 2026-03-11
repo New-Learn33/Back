@@ -13,6 +13,7 @@ from app.services.like_service import (
     delete_like,
     get_like,
 )
+from app.services.video_service import get_video_by_id
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 
@@ -27,6 +28,9 @@ def add_video_like(
 ):
     if isinstance(current_user, JSONResponse):
         return current_user
+
+    if not get_video_by_id(db, video_id):
+        return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
 
     try:
         existing_like = get_like(db, video_id=video_id, user_id=current_user.id)
@@ -56,6 +60,9 @@ def remove_video_like(
 ):
     if isinstance(current_user, JSONResponse):
         return current_user
+
+    if not get_video_by_id(db, video_id):
+        return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
 
     try:
         existing_like = get_like(db, video_id=video_id, user_id=current_user.id)

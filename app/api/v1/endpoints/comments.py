@@ -19,6 +19,7 @@ from app.services.comment_service import (
     get_comment_with_user,
     list_comments_by_video,
 )
+from app.services.video_service import get_video_by_id
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 
@@ -44,6 +45,9 @@ def create_video_comment(
     if isinstance(current_user, JSONResponse):
         return current_user
 
+    if not get_video_by_id(db, video_id):
+        return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
+
     try:
         comment = create_comment(
             db,
@@ -66,6 +70,9 @@ def create_video_comment(
 
 @router.get("/videos/{video_id}/comments", response_model=CommentListResponse)
 def get_video_comments(video_id: int, db: Session = Depends(get_db)):
+    if not get_video_by_id(db, video_id):
+        return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
+
     comments = list_comments_by_video(db, video_id)
     return success_response(
         data={
