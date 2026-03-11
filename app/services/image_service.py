@@ -18,12 +18,27 @@ os.makedirs(GENERATED_DIR, exist_ok=True)
 
 def build_image_prompt(category_hint: str, character_name: str, scene_order: int, dialogue: str, subtitle_text: str) -> str:
     return (
-        f"{category_hint}, same character consistency, "
+        f"{category_hint}, "
+        
+        # 캐릭터 고정
+        f"same character consistency, same character identity, "
         f"main character: {character_name}, "
-        f"webtoon style, scene {scene_order}, "
-        f"{subtitle_text}, emotion based on dialogue: {dialogue}"
-    )
+        f"same face, same hairstyle, same outfit, same body type, "
 
+        # 성별 고정
+        f"keep the same gender as the original character, do not change gender, "
+
+        # 스타일
+        f"webtoon illustration style, clean line art, vivid colors, "
+
+        # 장면
+        f"scene {scene_order}, "
+        f"{subtitle_text}, "
+        f"facial expression based on dialogue: {dialogue}, "
+
+        # 금지 요소
+        f"no text, no speech bubbles, no captions, no watermark, no UI elements"
+    )
 
 def save_b64_image_to_file(b64_data: str, filename: str) -> str:
     file_path = os.path.join(GENERATED_DIR, filename)
