@@ -1,7 +1,7 @@
 # v1 버전 API들을 한곳에 모음
 
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, categories, generation
+from app.api.v1.endpoints import auth, categories, comments, generation
 
 # 상위 라우터 생성
 api_router = APIRouter()
@@ -10,3 +10,4 @@ api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(categories.router, prefix="/categories", tags=["categories"])
 api_router.include_router(generation.router, prefix="/generation", tags=["generation"])
+api_router.include_router(comments.router, tags=["comments"])
