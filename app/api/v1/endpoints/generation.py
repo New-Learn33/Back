@@ -362,3 +362,47 @@ def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_
 
     except Exception:
         return error_response(500, "SERVER_001", "대표 이미지 선택 중 오류가 발생했습니다.")
+
+
+# 영상 생성 상태 조회 API
+@router.get("/jobs/{job_id}")
+def get_generation_status(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "status": job.status,
+            "progress": job.progress
+        },
+        "영상 생성 상태 조회에 성공했습니다."
+    )
+
+
+# 영상 생성 결과 조회 API
+@router.get("/jobs/{job_id}/result")
+def get_generation_result(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    # 아직 생성 중이면 막음
+    if job.status != "completed":
+        return error_response(
+            400,
+            "REQUEST_001",
+            "아직 영상 생성이 완료되지 않았습니다."
+        )
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "status": job.status,
+            "video_url": job.video_url
+        },
+        "영상 정보 조회에 성공했습니다."
+    )
