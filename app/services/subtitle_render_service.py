@@ -31,7 +31,7 @@ def render_subtitle_image(input_path: str, output_path: str, subtitle: str):
 
     subtitle = wrap_text(subtitle)
 
-    box_height = int(height * 0.22)
+    box_height = int(height * 0.12)
     box_y = height - box_height
 
     # 자막 잘 보이게 검정 박스 생성

@@ -126,6 +126,7 @@
 
 # 테스트용
 import random, os
+from app.models.video import Video
 from fastapi import APIRouter, Depends
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
@@ -195,7 +196,9 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
     script_result = generate_three_cut_script(request)
 
     job = GenerationJob(
+        user_id=1,  # 테스트용, 나중에 현재 로그인 유저 id로 교체
         title=script_result["title"],
+        prompt=request.prompt,
         category_id=request.category_id,
         status="pending",
         progress=0
@@ -312,12 +315,35 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
         image_paths = [url_to_file_path(i.image_url) for i in sorted_images]
 
         output_path = f"app/static/videos/{request.job_id}.mp4"
+        video_url = f"/static/videos/{request.job_id}.mp4"
 
         create_video_from_images(image_paths, output_path)
 
-        job.video_url = f"/static/videos/{request.job_id}.mp4"
+        job.video_url = video_url
         job.status = "completed"
         job.progress = 100
+
+        existing_video = db.query(Video).filter(Video.job_id == job.id).first()
+
+        if existing_video:
+            existing_video.user_id = job.user_id
+            existing_video.category_id = job.category_id
+            existing_video.title = job.title
+            existing_video.prompt = job.prompt
+            existing_video.thumbnail_url = job.thumbnail_url
+            existing_video.video_url = video_url
+        else:
+            new_video = Video(
+                job_id=job.id,
+                user_id=job.user_id,
+                category_id=job.category_id,
+                title=job.title,
+                prompt=job.prompt,
+                thumbnail_url=job.thumbnail_url,
+                video_url=video_url
+            )
+            db.add(new_video)
+
         db.commit()
 
         return success_response(
@@ -350,6 +376,11 @@ def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_
             return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
 
         job.thumbnail_url = request.thumbnail_url
+
+        video = db.query(Video).filter(Video.job_id == request.job_id).first()
+        if video:
+            video.thumbnail_url = request.thumbnail_url
+
         db.commit()
 
         return success_response(
@@ -362,3 +393,47 @@ def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_
 
     except Exception:
         return error_response(500, "SERVER_001", "대표 이미지 선택 중 오류가 발생했습니다.")
+
+
+# 영상 생성 상태 조회 API
+@router.get("/jobs/{job_id}")
+def get_generation_status(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "status": job.status,
+            "progress": job.progress
+        },
+        "영상 생성 상태 조회에 성공했습니다."
+    )
+
+
+# 영상 생성 결과 조회 API
+@router.get("/jobs/{job_id}/result")
+def get_generation_result(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    # 아직 생성 중이면 막음
+    if job.status != "completed":
+        return error_response(
+            400,
+            "REQUEST_001",
+            "아직 영상 생성이 완료되지 않았습니다."
+        )
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "status": job.status,
+            "video_url": job.video_url
+        },
+        "영상 정보 조회에 성공했습니다."
+    )
