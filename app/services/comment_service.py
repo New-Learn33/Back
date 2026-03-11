@@ -45,3 +45,12 @@ def delete_comment(db: Session, comment: Comment) -> None:
         video.comment_count -= 1
     db.delete(comment)
     db.commit()
+
+
+def list_comments_by_user(db: Session, user_id: int):
+    return (
+        db.query(Comment)
+        .filter(Comment.user_id == user_id)
+        .order_by(Comment.created_at.desc(), Comment.id.desc())
+        .all()
+    )

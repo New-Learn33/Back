@@ -36,3 +36,22 @@ def get_liked_video_ids(db: Session, user_id: int, video_ids: list[int]):
         .all()
     )
     return {video_id for (video_id,) in rows}
+
+
+def list_videos_by_user(db: Session, user_id: int):
+    return (
+        db.query(Video)
+        .filter(Video.user_id == user_id)
+        .order_by(Video.created_at.desc())
+        .all()
+    )
+
+
+def list_liked_videos_by_user(db: Session, user_id: int):
+    return (
+        db.query(Video)
+        .join(VideoLike, VideoLike.video_id == Video.id)
+        .filter(VideoLike.user_id == user_id)
+        .order_by(VideoLike.created_at.desc())
+        .all()
+    )
