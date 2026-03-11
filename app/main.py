@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.db.database import Base, engine
 from app.models.comment import Comment
+from app.models.like import Like
 from app.models.user import User
 
 app = FastAPI(
