@@ -126,7 +126,7 @@
 
 # 테스트용
 import random, os
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
@@ -137,6 +137,9 @@ from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
+from sqlalchemy.orm import Session
+from app.db.database import get_db
+from app.models.generation_job import GenerationJob
 
 router = APIRouter()
 
@@ -181,7 +184,7 @@ CATEGORY_TEMPLATE_MAP = {
 
 
 @router.post("", response_model=GenerationResponse)
-def generate_content(request: GenerationRequest):
+def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
     template_candidates = CATEGORY_TEMPLATE_MAP.get(request.category_id)
 
     if not template_candidates:
@@ -191,7 +194,17 @@ def generate_content(request: GenerationRequest):
 
     script_result = generate_three_cut_script(request)
 
-    job_id = 1
+    job = GenerationJob(
+        title=script_result["title"],
+        category_id=request.category_id,
+        status="pending",
+        progress=0
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    job_id = job.id
 
     image_results = generate_three_cut_images(
         job_id=job_id,
@@ -230,25 +243,24 @@ def url_to_file_path(url: str):
 
 # 자막 합성 API
 @router.post("/render/subtitles")
-def render_subtitles(request: RenderSubtitleRequest):
+def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
 
     try:
         scene_map = {scene.scene_order: scene for scene in request.scenes}
         results = []
 
         for img in request.images:
-
-            # 현재 이미지와 같은 scene_order의 대사 찾기
             scene = scene_map.get(img.scene_order)
 
             if not scene:
                 return error_response(400, "REQUEST_001", "scene 정보가 없습니다.")
 
-            # URL을 실제 파일 경로로 바꿔줌
             input_path = url_to_file_path(img.image_url)
             output_path = f"app/static/rendered/{request.job_id}_{img.scene_order}.png"
 
-            # 실제 자막 합성 실행
             render_subtitle_image(
                 input_path,
                 output_path,
@@ -260,6 +272,10 @@ def render_subtitles(request: RenderSubtitleRequest):
                 "image_url": f"/static/rendered/{request.job_id}_{img.scene_order}.png"
             })
 
+        job.status = "processing"
+        job.progress = 50
+        db.commit()
+
         return success_response(
             {
                 "job_id": request.job_id,
@@ -269,50 +285,72 @@ def render_subtitles(request: RenderSubtitleRequest):
         )
 
     except FileNotFoundError:
+        job.status = "failed"
+        db.commit()
         return error_response(404, "REQUEST_007", "이미지를 찾을 수 없습니다.")
 
     except Exception as e:
+        job.status = "failed"
+        db.commit()
         return error_response(500, "SERVER_001", str(e))
     
 
 # 영상 생성 API
 @router.post("/render/video")
-def render_video(request: RenderVideoRequest):
+def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
+
+    job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
 
     try:
+        job.status = "processing"
+        job.progress = 70
+        db.commit()
 
-        # 컷 순서대로 정렬
         sorted_images = sorted(request.subtitle_images, key=lambda x: x.scene_order)
-
         image_paths = [url_to_file_path(i.image_url) for i in sorted_images]
 
         output_path = f"app/static/videos/{request.job_id}.mp4"
 
-        # ffmpeg 실행
         create_video_from_images(image_paths, output_path)
+
+        job.video_url = f"/static/videos/{request.job_id}.mp4"
+        job.status = "completed"
+        job.progress = 100
+        db.commit()
 
         return success_response(
             {
                 "job_id": request.job_id,
-                "video_url": f"/static/videos/{request.job_id}.mp4"
+                "status": job.status,
+                "video_url": job.video_url
             },
             "영상 생성 성공"
         )
 
     except Exception as e:
+        job.status = "failed"
+        job.progress = 0
+        db.commit()
         return error_response(500, "SERVER_001", str(e))
+    
 
 # 썸네일 선택 (사진 중에 선택) API
 @router.post("/thumbnail/select")
-def select_thumbnail(request: ThumbnailSelectRequest):
+def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_db)):
     try:
         file_path = url_to_file_path(request.thumbnail_url)
 
         if not os.path.exists(file_path):
             return error_response(404, "REQUEST_007", "선택한 대표 이미지 파일이 존재하지 않습니다.")
 
-        # TODO: 나중에 DB 연결 시 generation_jobs.thumbnail_url 업데이트
-        # ex) update generation_job set thumbnail_url = request.thumbnail_url where id = request.job_id
+        job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
+        if not job:
+            return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+        job.thumbnail_url = request.thumbnail_url
+        db.commit()
 
         return success_response(
             {
