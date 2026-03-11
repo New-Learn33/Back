@@ -2,11 +2,15 @@ from sqlalchemy.orm import Session
 
 from app.models.comment import Comment
 from app.models.user import User
+from app.models.video import Video
 
 
 def create_comment(db: Session, *, video_id: int, user_id: int, content: str) -> Comment:
     comment = Comment(video_id=video_id, user_id=user_id, content=content)
     db.add(comment)
+    video = db.query(Video).filter(Video.id == video_id).first()
+    if video:
+        video.comment_count += 1
     db.commit()
     db.refresh(comment)
     return comment
@@ -36,5 +40,17 @@ def get_comment_by_id(db: Session, comment_id: int):
 
 
 def delete_comment(db: Session, comment: Comment) -> None:
+    video = db.query(Video).filter(Video.id == comment.video_id).first()
+    if video and video.comment_count > 0:
+        video.comment_count -= 1
     db.delete(comment)
     db.commit()
+
+
+def list_comments_by_user(db: Session, user_id: int):
+    return (
+        db.query(Comment)
+        .filter(Comment.user_id == user_id)
+        .order_by(Comment.created_at.desc(), Comment.id.desc())
+        .all()
+    )

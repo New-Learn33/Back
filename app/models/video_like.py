@@ -4,9 +4,15 @@ from sqlalchemy.sql import func
 from app.db.database import Base
 
 
-class Like(Base):
-    __tablename__ = "likes"
-    __table_args__ = (UniqueConstraint("video_id", "user_id", name="uq_likes_video_user"),)
+class VideoLike(Base):
+    __tablename__ = "video_likes"
+    __table_args__ = (
+        UniqueConstraint(
+            "video_id",
+            "user_id",
+            name="uq_video_likes_video_user",
+        ),
+    )
 
     id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
     video_id = Column(BigInteger, nullable=False, index=True)

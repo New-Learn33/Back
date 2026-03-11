@@ -29,5 +29,7 @@ def init_db():
     import app.models.user
     import app.models.generation_job
     import app.models.video
+    import app.models.video_like
+    import app.models.comment
 
     Base.metadata.create_all(bind=engine)
