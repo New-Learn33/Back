@@ -67,3 +67,8 @@ class SubtitleImageItem(BaseModel):
 class RenderVideoRequest(BaseModel):
     job_id: int
     subtitle_images: List[SubtitleImageItem]
+
+
+class ThumbnailSelectRequest(BaseModel):
+    job_id: int
+    thumbnail_url: str
