@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.pyc
+
+# virtual environment
+.venv/
+venv/
+
+# env
+.env
+
+# vscode
+.vscode/
+
+# mac
+.DS_Store
+
+# 생성 결과물들
+app/static/generated/*
+app/static/rendered/*
+app/static/videos/*

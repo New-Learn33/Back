@@ -1,0 +1,2122 @@
+{
+  "1": [
+    {
+      "id": "ani_ani_1",
+      "name": "ani_1",
+      "image_url": "/static/templates/ani/ani (1).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_1",
+      "gender": "male",
+      "appearance": {
+        "hair": "messy, spiky green with black highlights",
+        "eyes": "large, green",
+        "skin": "fair with freckles",
+        "body_type": "slim, athletic"
+      },
+      "outfit": {
+        "top": "black tactical armor with brown padding and numbered shoulder pad",
+        "bottom": "red utility belt",
+        "shoes": "not visible",
+        "accessories": [
+          "brown armored gloves",
+          "metal neck guard"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "hero costume",
+        "tactical gear"
+      ],
+      "forbidden_changes": [
+        "hair color and style",
+        "eye color",
+        "core armor design"
+      ]
+    },
+    {
+      "id": "ani_ani_10",
+      "name": "ani_10",
+      "image_url": "/static/templates/ani/ani (10).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_10",
+      "gender": "male",
+      "appearance": {
+        "hair": "spiky silver-gray",
+        "eyes": "one visible dark eye",
+        "skin": "light",
+        "body_type": "slim athletic"
+      },
+      "outfit": {
+        "top": "black short-sleeve shirt with red stripes",
+        "bottom": "black pants with red stripes",
+        "shoes": "barefoot",
+        "accessories": [
+          "black face mask",
+          "small book"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "dynamic pose",
+        "modern ninja"
+      ],
+      "forbidden_changes": [
+        "hair color and style",
+        "face mask removal",
+        "barefoot status"
+      ]
+    },
+    {
+      "id": "ani_ani_11",
+      "name": "ani_11",
+      "image_url": "/static/templates/ani/ani (11).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_11",
+      "gender": "male",
+      "appearance": {
+        "hair": "spiky black",
+        "eyes": "black, sharp",
+        "skin": "light",
+        "body_type": "muscular, lean"
+      },
+      "outfit": {
+        "top": "orange gi with blue undershirt",
+        "bottom": "orange gi pants",
+        "shoes": "blue martial arts shoes with red laces",
+        "accessories": [
+          "blue wristbands",
+          "blue belt"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "martial arts",
+        "spiky hair"
+      ],
+      "forbidden_changes": [
+        "hair color and style",
+        "gi color scheme",
+        "eye shape and color"
+      ]
+    },
+    {
+      "id": "ani_ani_12",
+      "name": "ani_12",
+      "image_url": "/static/templates/ani/ani (12).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_12",
+      "gender": "female",
+      "appearance": {
+        "hair": "short black hair with side bangs",
+        "eyes": "gray eyes with serious expression",
+        "skin": "light skin tone",
+        "body_type": "slim"
+      },
+      "outfit": {
+        "top": "black tactical jacket with white straps and emblem",
+        "bottom": "black tactical pants with gray knee pads and straps",
+        "shoes": "not visible",
+        "accessories": [
+          "red scarf",
+          "utility belts",
+          "shoulder harness",
+          "communication device"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "military",
+        "dark color palette"
+      ],
+      "forbidden_changes": [
+        "do not change hair color or style",
+        "do not alter emblem on jacket",
+        "do not remove scarf"
+      ]
+    },
+    {
+      "id": "ani_ani_13",
+      "name": "ani_13",
+      "image_url": "/static/templates/ani/ani (13).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_13",
+      "gender": "male",
+      "appearance": {
+        "hair": "tall, spiky black hair",
+        "eyes": "intense, sharp eyes with red irises",
+        "skin": "light tan",
+        "body_type": "muscular, athletic build"
+      },
+      "outfit": {
+        "top": "blue bodysuit with white and gold armored vest",
+        "bottom": "blue bodysuit pants",
+        "shoes": "not visible",
+        "accessories": [
+          "white gloves"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "dynamic pose",
+        "intense expression"
+      ],
+      "forbidden_changes": [
+        "hair style must remain spiky and tall",
+        "keep muscular body type",
+        "retain armor colors and design"
+      ]
+    },
+    {
+      "id": "ani_ani_14",
+      "name": "ani_14",
+      "image_url": "/static/templates/ani/ani (14).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_14",
+      "gender": "male",
+      "appearance": {
+        "hair": "short blonde",
+        "eyes": "narrow with glasses",
+        "skin": "light complexion",
+        "body_type": "tall and slim"
+      },
+      "outfit": {
+        "top": "red suit jacket with black collar",
+        "bottom": "matching red pants",
+        "shoes": "black shoes",
+        "accessories": [
+          "glasses",
+          "black gloves"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "dynamic pose",
+        "stylized"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove glasses",
+        "alter suit color"
+      ]
+    },
+    {
+      "id": "ani_ani_2",
+      "name": "ani_2",
+      "image_url": "/static/templates/ani/ani (2).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_2",
+      "gender": "male",
+      "appearance": {
+        "hair": "dark brown, long tied back in a bun",
+        "eyes": "blue-gray, sharp",
+        "skin": "light, fair",
+        "body_type": "lean, athletic"
+      },
+      "outfit": {
+        "top": "light gray lace-up shirt with dark cloak",
+        "bottom": "not visible",
+        "shoes": "not visible",
+        "accessories": []
+      },
+      "style_keywords": [
+        "anime style",
+        "sharp facial features",
+        "modern casual",
+        "serious expression"
+      ],
+      "forbidden_changes": [
+        "alter hair color or style",
+        "change eye color",
+        "remove lace-up detail on shirt"
+      ]
+    },
+    {
+      "id": "ani_ani_3",
+      "name": "ani_3",
+      "image_url": "/static/templates/ani/ani (3).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_3",
+      "gender": "male",
+      "appearance": {
+        "hair": "short spiky pink",
+        "eyes": "large brown",
+        "skin": "light",
+        "body_type": "slim"
+      },
+      "outfit": {
+        "top": "black high-collar jacket with red lining and gold buttons",
+        "bottom": "black pants",
+        "shoes": "not visible",
+        "accessories": []
+      },
+      "style_keywords": [
+        "anime style",
+        "modern school uniform",
+        "supernatural element"
+      ],
+      "forbidden_changes": [
+        "hair color must remain pink",
+        "outfit must stay school uniform style",
+        "hand with mouth feature must be present"
+      ]
+    },
+    {
+      "id": "ani_ani_4",
+      "name": "ani_4",
+      "image_url": "/static/templates/ani/ani (4).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_4",
+      "gender": "male",
+      "appearance": {
+        "hair": "dark brown, parted middle, medium length",
+        "eyes": "light grayish-blue, serious expression",
+        "skin": "light, fair complexion",
+        "body_type": "lean, athletic"
+      },
+      "outfit": {
+        "top": "white shirt with cravat, brown jacket, green cloak",
+        "bottom": "dark pants",
+        "shoes": "not visible",
+        "accessories": [
+          "emerald ring"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "serious",
+        "historical",
+        "military"
+      ],
+      "forbidden_changes": [
+        "no hair color change",
+        "no removal of ring",
+        "no altering cloak color"
+      ]
+    },
+    {
+      "id": "ani_ani_5",
+      "name": "ani_5",
+      "image_url": "/static/templates/ani/ani (5).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_5",
+      "gender": "male",
+      "appearance": {
+        "hair": "short spiky green",
+        "eyes": "narrow sharp",
+        "skin": "light tan",
+        "body_type": "muscular"
+      },
+      "outfit": {
+        "top": "white short-sleeve shirt with buttons",
+        "bottom": "not visible",
+        "shoes": "not visible",
+        "accessories": [
+          "golden earring"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "dynamic pose",
+        "detailed shading"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove earring",
+        "alter sword design"
+      ]
+    },
+    {
+      "id": "ani_ani_6",
+      "name": "ani_6",
+      "image_url": "/static/templates/ani/ani (6).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_6",
+      "gender": "male",
+      "appearance": {
+        "hair": "spiky black hair",
+        "eyes": "sharp dark eyes",
+        "skin": "light skin tone",
+        "body_type": "lean muscular"
+      },
+      "outfit": {
+        "top": "white open-front robe",
+        "bottom": "purple rope belt with dark pants",
+        "shoes": "not visible",
+        "accessories": [
+          "katana sword"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "shonen",
+        "dynamic pose"
+      ],
+      "forbidden_changes": [
+        "no change to eye color",
+        "no change to hair style",
+        "no change to outfit colors"
+      ]
+    },
+    {
+      "id": "ani_ani_7",
+      "name": "ani_7",
+      "image_url": "/static/templates/ani/ani (7).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_7",
+      "gender": "male",
+      "appearance": {
+        "hair": "spiky black hair",
+        "eyes": "sharp, serious eyes",
+        "skin": "fair skin tone",
+        "body_type": "muscular and athletic"
+      },
+      "outfit": {
+        "top": "orange sleeveless gi with blue undershirt",
+        "bottom": "orange loose pants",
+        "shoes": "blue martial arts boots with yellow trim",
+        "accessories": [
+          "blue wristbands",
+          "blue belt",
+          "kanji emblem on chest"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "martial arts",
+        "spiky hair"
+      ],
+      "forbidden_changes": [
+        "change hair color or style",
+        "alter muscular body type",
+        "remove kanji emblem"
+      ]
+    },
+    {
+      "id": "ani_ani_8",
+      "name": "ani_8",
+      "image_url": "/static/templates/ani/ani (8).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_8",
+      "gender": "male",
+      "appearance": {
+        "hair": "short black spiky",
+        "eyes": "large round black",
+        "skin": "light tan",
+        "body_type": "slim muscular"
+      },
+      "outfit": {
+        "top": "red open buttoned shirt",
+        "bottom": "blue knee-length shorts with white fur trim",
+        "shoes": "brown sandals",
+        "accessories": [
+          "yellow sash belt",
+          "straw hat"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "bright colors",
+        "expressive face"
+      ],
+      "forbidden_changes": [
+        "no hair color change",
+        "no outfit color change",
+        "no removing hat"
+      ]
+    },
+    {
+      "id": "ani_ani_9",
+      "name": "ani_9",
+      "image_url": "/static/templates/ani/ani (9).jpg",
+      "category_hint": "anime style",
+      "character_name": "ani_9",
+      "gender": "male",
+      "appearance": {
+        "hair": "short white hair, spiky",
+        "eyes": "light blue eyes",
+        "skin": "light skin tone",
+        "body_type": "lean, athletic build"
+      },
+      "outfit": {
+        "top": "black leather jacket over dark gray V-neck shirt",
+        "bottom": "light blue ripped jeans",
+        "shoes": "not visible",
+        "accessories": [
+          "rectangular dark sunglasses"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "cool",
+        "casual",
+        "modern"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove sunglasses",
+        "replace leather jacket"
+      ]
+    }
+  ],
+  "2": [
+    {
+      "id": "hero_hero_1",
+      "name": "hero_1",
+      "image_url": "/static/templates/hero/hero (1).jpg",
+      "category_hint": "superhero style",
+      "character_name": "hero_1",
+      "gender": "male",
+      "appearance": {
+        "hair": "covered by mask",
+        "eyes": "white slitted eyes",
+        "skin": "not visible, covered by suit",
+        "body_type": "muscular athletic build"
+      },
+      "outfit": {
+        "top": "black form-fitting suit with silver accents and spikes",
+        "bottom": "black form-fitting pants with silver accents",
+        "shoes": "black fitted boots with silver accents",
+        "accessories": [
+          "silver clawed gloves",
+          "silver necklace with large spikes"
+        ]
+      },
+      "style_keywords": [
+        "sleek",
+        "stealthy",
+        "futuristic"
+      ],
+      "forbidden_changes": [
+        "remove spikes on necklace",
+        "change suit color from black",
+        "remove clawed gloves"
+      ]
+    },
+    {
+      "id": "hero_hero_1",
+      "name": "hero_1",
+      "image_url": "/static/templates/hero/hero (1).png",
+      "category_hint": "superhero style",
+      "character_name": "hero_1",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "fully covered by mask",
+        "eyes": "white eye patches on mask",
+        "skin": "not visible, covered by suit",
+        "body_type": "muscular, athletic"
+      },
+      "outfit": {
+        "top": "red and black tight suit with straps and belt",
+        "bottom": "matching red and black tight pants",
+        "shoes": "red boots",
+        "accessories": [
+          "belt with pouches",
+          "katanas on back",
+          "gun holster"
+        ]
+      },
+      "style_keywords": [
+        "superhero style",
+        "combat ready",
+        "bold colors"
+      ],
+      "forbidden_changes": [
+        "remove mask",
+        "change color pattern",
+        "alter muscular build"
+      ]
+    },
+    {
+      "id": "hero_hero_2",
+      "name": "hero_2",
+      "image_url": "/static/templates/hero/hero (2).jpg",
+      "category_hint": "superhero style",
+      "character_name": "hero_2",
+      "gender": "male",
+      "appearance": {
+        "hair": "short dark hair with white streaks",
+        "eyes": "dark eyes with intense gaze",
+        "skin": "light skin tone",
+        "body_type": "muscular and fit"
+      },
+      "outfit": {
+        "top": "black and gold detailed long-sleeve shirt with high red and gold collar",
+        "bottom": "black pants with gold patterns",
+        "shoes": "dark armored boots with red straps",
+        "accessories": [
+          "red cape with gold trim",
+          "gloves",
+          "gold amulet with glowing center",
+          "red belt with blue rope"
+        ]
+      },
+      "style_keywords": [
+        "regal",
+        "mystical",
+        "armored",
+        "heroic"
+      ],
+      "forbidden_changes": [
+        "remove red cape",
+        "change gold amulet",
+        "alter white hair streaks"
+      ]
+    },
+    {
+      "id": "hero_hero_2",
+      "name": "hero_2",
+      "image_url": "/static/templates/hero/hero (2).png",
+      "category_hint": "superhero style",
+      "character_name": "hero_2",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "helmet with metallic gold and red design",
+        "eyes": "glowing white eye slits on helmet",
+        "skin": "covered in red and gold metallic armor",
+        "body_type": "muscular robotic/suit form"
+      },
+      "outfit": {
+        "top": "red and gold armored chest plate",
+        "bottom": "red and gold armored legs",
+        "shoes": "red armored boots with thrusters",
+        "accessories": [
+          "helmet",
+          "repulsor gloves",
+          "mechanical components"
+        ]
+      },
+      "style_keywords": [
+        "futuristic",
+        "armored",
+        "metallic",
+        "superhero",
+        "tech-enhanced"
+      ],
+      "forbidden_changes": [
+        "no change to helmet design",
+        "maintain red and gold color scheme",
+        "preserve armored futuristic look"
+      ]
+    },
+    {
+      "id": "hero_hero_3",
+      "name": "hero_3",
+      "image_url": "/static/templates/hero/hero (3).jpg",
+      "category_hint": "superhero style",
+      "character_name": "hero_3",
+      "gender": "male",
+      "appearance": {
+        "hair": "short, dark",
+        "eyes": "blue, visible",
+        "skin": "fair",
+        "body_type": "muscular, athletic"
+      },
+      "outfit": {
+        "top": "blue and white star-spangled suit with white star emblem",
+        "bottom": "blue, tight-fitting pants",
+        "shoes": "blue boots",
+        "accessories": [
+          "shield with star emblem",
+          "belt with pouches",
+          "mask covering upper face"
+        ]
+      },
+      "style_keywords": [
+        "heroic",
+        "patriotic",
+        "classic",
+        "military-inspired"
+      ],
+      "forbidden_changes": [
+        "no color change",
+        "no removal of shield",
+        "no change to star emblem"
+      ]
+    },
+    {
+      "id": "hero_hero_3",
+      "name": "hero_3",
+      "image_url": "/static/templates/hero/hero (3).png",
+      "category_hint": "superhero style",
+      "character_name": "hero_3",
+      "gender": "male",
+      "appearance": {
+        "hair": "long blonde",
+        "eyes": "not clearly visible",
+        "skin": "light",
+        "body_type": "muscular"
+      },
+      "outfit": {
+        "top": "blue sleeveless with large black circles",
+        "bottom": "blue pants with black circles",
+        "shoes": "golden boots",
+        "accessories": [
+          "red cape",
+          "winged helmet",
+          "brown hammer",
+          "gold belt",
+          "red wristbands",
+          "black straps with gold rings on legs"
+        ]
+      },
+      "style_keywords": [
+        "heroic",
+        "mythological",
+        "muscular",
+        "classic superhero"
+      ],
+      "forbidden_changes": [
+        "remove cape",
+        "change hammer",
+        "alter winged helmet"
+      ]
+    },
+    {
+      "id": "hero_hero_4",
+      "name": "hero_4",
+      "image_url": "/static/templates/hero/hero (4).jpg",
+      "category_hint": "superhero style",
+      "character_name": "hero_4",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "none, flaming skull",
+        "eyes": "glowing empty eye sockets",
+        "skin": "skull bone",
+        "body_type": "muscular and tall"
+      },
+      "outfit": {
+        "top": "black leather jacket with spikes",
+        "bottom": "black pants",
+        "shoes": "not visible",
+        "accessories": [
+          "spiked gloves",
+          "black belt"
+        ]
+      },
+      "style_keywords": [
+        "superhero style",
+        "flaming skull",
+        "dark",
+        "edgy",
+        "motorcycle"
+      ],
+      "forbidden_changes": [
+        "no human hair",
+        "no skin covering skull",
+        "always wear spiked jacket"
+      ]
+    },
+    {
+      "id": "hero_hero_4",
+      "name": "hero_4",
+      "image_url": "/static/templates/hero/hero (4).png",
+      "category_hint": "superhero style",
+      "character_name": "hero_4",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "covered by mask",
+        "eyes": "large white eye lenses",
+        "skin": "covered by suit",
+        "body_type": "athletic and muscular"
+      },
+      "outfit": {
+        "top": "red and black web-patterned suit",
+        "bottom": "matching red and black suit pants",
+        "shoes": "integrated suit feet",
+        "accessories": []
+      },
+      "style_keywords": [
+        "superhero",
+        "web-pattern",
+        "dynamic pose"
+      ],
+      "forbidden_changes": [
+        "no face revealed",
+        "maintain web-pattern",
+        "retain color scheme"
+      ]
+    },
+    {
+      "id": "hero_hero_5",
+      "name": "hero_5",
+      "image_url": "/static/templates/hero/hero (5).jpg",
+      "category_hint": "superhero style",
+      "character_name": "hero_5",
+      "gender": "male",
+      "appearance": {
+        "hair": "masked, not visible",
+        "eyes": "shadowed under mask",
+        "skin": "light skin tone with muscular arms exposed",
+        "body_type": "muscular and broad-shouldered"
+      },
+      "outfit": {
+        "top": "yellow and blue tight superhero suit with black claw marks",
+        "bottom": "blue shorts with pink belt featuring an 'X' symbol",
+        "shoes": "not visible",
+        "accessories": [
+          "blue gloves with extended claws",
+          "yellow and black mask"
+        ]
+      },
+      "style_keywords": [
+        "superhero",
+        "muscular",
+        "claws"
+      ],
+      "forbidden_changes": [
+        "no alternate mask styles",
+        "no removal of claws",
+        "no change in color scheme"
+      ]
+    }
+  ],
+  "3": [
+    {
+      "id": "game_game_1",
+      "name": "game_1",
+      "image_url": "/static/templates/game/game (1).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_1",
+      "gender": "male",
+      "appearance": {
+        "hair": "short brown with shaved designs",
+        "eyes": "blue",
+        "skin": "light complexion with cybernetic facial implants",
+        "body_type": "muscular and athletic"
+      },
+      "outfit": {
+        "top": "black graphic t-shirt with dark leather jacket with glowing blue collar",
+        "bottom": "not visible",
+        "shoes": "not visible",
+        "accessories": [
+          "cybernetic arm",
+          "fingerless gloves",
+          "badges on jacket"
+        ]
+      },
+      "style_keywords": [
+        "cyberpunk",
+        "futuristic",
+        "tactical"
+      ],
+      "forbidden_changes": [
+        "change hair style and color",
+        "remove cybernetic implants",
+        "alter jacket design"
+      ]
+    },
+    {
+      "id": "game_game_1",
+      "name": "game_1",
+      "image_url": "/static/templates/game/game (1).png",
+      "category_hint": "game character style",
+      "character_name": "game_1",
+      "gender": "female",
+      "appearance": {
+        "hair": "short, brown, slightly messy",
+        "eyes": "light colored, intense gaze",
+        "skin": "light with dirt and bruises",
+        "body_type": "fit, athletic"
+      },
+      "outfit": {
+        "top": "dark blue tank top",
+        "bottom": "dark pants",
+        "shoes": "not visible",
+        "accessories": [
+          "gun holster",
+          "black fingerless gloves",
+          "belt with badge and pouches"
+        ]
+      },
+      "style_keywords": [
+        "realistic",
+        "tactical",
+        "gritty"
+      ],
+      "forbidden_changes": [
+        "change gender",
+        "remove gloves",
+        "alter hairstyle drastically"
+      ]
+    },
+    {
+      "id": "game_game_10",
+      "name": "game_10",
+      "image_url": "/static/templates/game/game (10).png",
+      "category_hint": "game character style",
+      "character_name": "game_10",
+      "gender": "male",
+      "appearance": {
+        "hair": "short blond, side parted",
+        "eyes": "blue, focused",
+        "skin": "fair, light complexion",
+        "body_type": "athletic, muscular"
+      },
+      "outfit": {
+        "top": "dark tactical short-sleeve shirt",
+        "bottom": "black cargo pants with tactical straps",
+        "shoes": "not visible",
+        "accessories": [
+          "black fingerless gloves",
+          "digital wristwatch",
+          "tactical belt with pouches",
+          "shoulder holster"
+        ]
+      },
+      "style_keywords": [
+        "realistic",
+        "military",
+        "tactical"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove tactical gear",
+        "alter body type"
+      ]
+    },
+    {
+      "id": "game_game_11",
+      "name": "game_11",
+      "image_url": "/static/templates/game/game (11).png",
+      "category_hint": "game character style",
+      "character_name": "game_11",
+      "gender": "male",
+      "appearance": {
+        "hair": "long blond",
+        "eyes": "glowing orange",
+        "skin": "light and weathered",
+        "body_type": "muscular"
+      },
+      "outfit": {
+        "top": "dark leather armor with metal shoulder guard",
+        "bottom": "not visible",
+        "shoes": "not visible",
+        "accessories": [
+          "horned iron helmet",
+          "armored chest plate"
+        ]
+      },
+      "style_keywords": [
+        "medieval",
+        "warrior",
+        "dark",
+        "fantasy",
+        "game character style"
+      ],
+      "forbidden_changes": [
+        "remove helmet horns",
+        "change eye color",
+        "alter armor design"
+      ]
+    },
+    {
+      "id": "game_game_12",
+      "name": "game_12",
+      "image_url": "/static/templates/game/game (12).png",
+      "category_hint": "game character style",
+      "character_name": "game_12",
+      "gender": "male",
+      "appearance": {
+        "hair": "brown, short, visible under hat",
+        "eyes": "large, blue",
+        "skin": "light complexion",
+        "body_type": "stocky, cartoonish"
+      },
+      "outfit": {
+        "top": "red shirt",
+        "bottom": "blue overalls",
+        "shoes": "brown shoes",
+        "accessories": [
+          "red cap with 'M' emblem",
+          "white gloves"
+        ]
+      },
+      "style_keywords": [
+        "cartoon",
+        "game character style",
+        "bright colors"
+      ],
+      "forbidden_changes": [
+        "no change in cap emblem",
+        "maintain red and blue color scheme",
+        "keep gloves and shoes consistent"
+      ]
+    },
+    {
+      "id": "game_game_13",
+      "name": "game_13",
+      "image_url": "/static/templates/game/game (13).png",
+      "category_hint": "game character style",
+      "character_name": "game_13",
+      "gender": "male",
+      "appearance": {
+        "hair": "spiky blonde",
+        "eyes": "blue, sharp",
+        "skin": "fair",
+        "body_type": "muscular, lean"
+      },
+      "outfit": {
+        "top": "black sleeveless turtleneck with shoulder armor",
+        "bottom": "black baggy pants",
+        "shoes": "black combat boots",
+        "accessories": [
+          "brown gloves",
+          "belt with buckle",
+          "arm guard with studs"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "game character style",
+        "warrior",
+        "sword"
+      ],
+      "forbidden_changes": [
+        "hair color and style",
+        "large sword presence",
+        "shoulder armor on left side"
+      ]
+    },
+    {
+      "id": "game_game_14",
+      "name": "game_14",
+      "image_url": "/static/templates/game/game (14).png",
+      "category_hint": "game character style",
+      "character_name": "game_14",
+      "gender": "female",
+      "appearance": {
+        "hair": "blonde, styled in large, rounded pigtails",
+        "eyes": "large blue eyes",
+        "skin": "fair skin tone",
+        "body_type": "slim, cartoonish proportions"
+      },
+      "outfit": {
+        "top": "pink puffed short-sleeve dress with blue jewel brooch",
+        "bottom": "long flowing pink skirt",
+        "shoes": "pink shoes with heels",
+        "accessories": [
+          "white gloves",
+          "blue jewel brooch"
+        ]
+      },
+      "style_keywords": [
+        "cartoon",
+        "colorful",
+        "fantasy",
+        "game character style"
+      ],
+      "forbidden_changes": [
+        "change hairstyle",
+        "alter dress color",
+        "remove gloves"
+      ]
+    },
+    {
+      "id": "game_game_15",
+      "name": "game_15",
+      "image_url": "/static/templates/game/game (15).png",
+      "category_hint": "game character style",
+      "character_name": "game_15",
+      "gender": "female",
+      "appearance": {
+        "hair": "brown, tied back",
+        "eyes": "blue",
+        "skin": "light tone",
+        "body_type": "athletic and slim"
+      },
+      "outfit": {
+        "top": "red leather jacket with black shirt underneath",
+        "bottom": "dark fitted pants",
+        "shoes": "dark brown ankle boots with buckles",
+        "accessories": [
+          "black thigh holster",
+          "black belt pouch",
+          "bracelet"
+        ]
+      },
+      "style_keywords": [
+        "realistic",
+        "combat-ready",
+        "modern tactical",
+        "game character style"
+      ],
+      "forbidden_changes": [
+        "no change of hair color",
+        "no removal of holster",
+        "no change of jacket color"
+      ]
+    },
+    {
+      "id": "game_game_16",
+      "name": "game_16",
+      "image_url": "/static/templates/game/game (16).png",
+      "category_hint": "game character style",
+      "character_name": "game_16",
+      "gender": "male",
+      "appearance": {
+        "hair": "short black hair with red headband",
+        "eyes": "dark eyes",
+        "skin": "tan skin tone",
+        "body_type": "muscular and broad-shouldered"
+      },
+      "outfit": {
+        "top": "bare chest with maroon cloth draped over left shoulder",
+        "bottom": "tattered white martial arts pants with black belt",
+        "shoes": "simple brown sandals",
+        "accessories": [
+          "red headband",
+          "brown padded gloves",
+          "maroon cloth wrap"
+        ]
+      },
+      "style_keywords": [
+        "game character style",
+        "martial artist",
+        "rugged"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove gloves",
+        "alter muscular physique"
+      ]
+    },
+    {
+      "id": "game_game_2",
+      "name": "game_2",
+      "image_url": "/static/templates/game/game (2).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_2",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "not visible, helmet covered",
+        "eyes": "not visible, yellow visor",
+        "skin": "not visible, armored suit",
+        "body_type": "muscular, armored, athletic"
+      },
+      "outfit": {
+        "top": "green futuristic armored chest plate",
+        "bottom": "green armored leg guards",
+        "shoes": "green armored boots",
+        "accessories": [
+          "helmet with yellow visor",
+          "futuristic gun",
+          "backpack armor module"
+        ]
+      },
+      "style_keywords": [
+        "futuristic",
+        "military",
+        "sci-fi",
+        "game character style",
+        "armored"
+      ],
+      "forbidden_changes": [
+        "remove helmet",
+        "change armor color",
+        "alter basic armor shape"
+      ]
+    },
+    {
+      "id": "game_game_2",
+      "name": "game_2",
+      "image_url": "/static/templates/game/game (2).png",
+      "category_hint": "game character style",
+      "character_name": "game_2",
+      "gender": "female",
+      "appearance": {
+        "hair": "long, flowing, light brown",
+        "eyes": "focused, brown",
+        "skin": "fair with natural tones",
+        "body_type": "athletic, fit"
+      },
+      "outfit": {
+        "top": "fur-lined armored vest",
+        "bottom": "patched fabric pants with fur accents",
+        "shoes": "fur-lined, rugged boots",
+        "accessories": [
+          "bow",
+          "arrow quiver",
+          "arm guard",
+          "neck scarf"
+        ]
+      },
+      "style_keywords": [
+        "tribal",
+        "hunter",
+        "adventurous",
+        "rugged"
+      ],
+      "forbidden_changes": [
+        "no modern clothing",
+        "no short hair",
+        "no heavy armor"
+      ]
+    },
+    {
+      "id": "game_game_3",
+      "name": "game_3",
+      "image_url": "/static/templates/game/game (3).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_3",
+      "gender": "male",
+      "appearance": {
+        "hair": "messy black hair",
+        "eyes": "large eyes with black mask",
+        "skin": "light skin",
+        "body_type": "slim and athletic"
+      },
+      "outfit": {
+        "top": "long black leather coat with high collar",
+        "bottom": "black pants",
+        "shoes": "dark brown boots",
+        "accessories": [
+          "white and black eye mask",
+          "red gloves",
+          "dagger"
+        ]
+      },
+      "style_keywords": [
+        "dynamic pose",
+        "game character style",
+        "stealthy",
+        "anime-inspired"
+      ],
+      "forbidden_changes": [
+        "no change to mask design",
+        "retain coat length and style",
+        "keep red gloves"
+      ]
+    },
+    {
+      "id": "game_game_3",
+      "name": "game_3",
+      "image_url": "/static/templates/game/game (3).png",
+      "category_hint": "game character style",
+      "character_name": "game_3",
+      "gender": "male",
+      "appearance": {
+        "hair": "medium length, brown, slightly wavy",
+        "eyes": "blue",
+        "skin": "light complexion",
+        "body_type": "athletic, lean"
+      },
+      "outfit": {
+        "top": "light blue long-sleeve shirt with rolled sleeves",
+        "bottom": "dark brown pants with suspenders",
+        "shoes": "brown leather boots",
+        "accessories": [
+          "black scarf",
+          "brown wide-brim hat",
+          "belt with large buckle",
+          "holster with revolver"
+        ]
+      },
+      "style_keywords": [
+        "western",
+        "rugged",
+        "game character style"
+      ],
+      "forbidden_changes": [
+        "change gender",
+        "remove hat",
+        "alter face features drastically"
+      ]
+    },
+    {
+      "id": "game_game_4",
+      "name": "game_4",
+      "image_url": "/static/templates/game/game (4).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_4",
+      "gender": "female",
+      "appearance": {
+        "hair": "medium brown, tied back",
+        "eyes": "brown, focused",
+        "skin": "light tone",
+        "body_type": "slim"
+      },
+      "outfit": {
+        "top": "dark brown jacket over black shirt",
+        "bottom": "light blue ripped jeans",
+        "shoes": "dark sneakers",
+        "accessories": [
+          "rifle slung on back",
+          "dog companion"
+        ]
+      },
+      "style_keywords": [
+        "realistic",
+        "post-apocalyptic",
+        "rugged"
+      ],
+      "forbidden_changes": [
+        "hair color must remain medium brown",
+        "always carry rifle",
+        "dog must always be present"
+      ]
+    },
+    {
+      "id": "game_game_4",
+      "name": "game_4",
+      "image_url": "/static/templates/game/game (4).png",
+      "category_hint": "game character style",
+      "character_name": "game_4",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "spiky blond",
+        "eyes": "large blue",
+        "skin": "light",
+        "body_type": "slim and athletic"
+      },
+      "outfit": {
+        "top": "black sleeveless shirt with shoulder armor",
+        "bottom": "loose black pants",
+        "shoes": "brown boots",
+        "accessories": [
+          "single glove",
+          "belt with buckle"
+        ]
+      },
+      "style_keywords": [
+        "game character style",
+        "fantasy",
+        "bold design"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove shoulder armor",
+        "alter sword size"
+      ]
+    },
+    {
+      "id": "game_game_5",
+      "name": "game_5",
+      "image_url": "/static/templates/game/game (5).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_5",
+      "gender": "male",
+      "appearance": {
+        "hair": "short, slightly messy dark hair",
+        "eyes": "focused, looking to the side",
+        "skin": "light complexion",
+        "body_type": "athletic, lean build"
+      },
+      "outfit": {
+        "top": "long sleeve shirt with rolled-up sleeves",
+        "bottom": "worn, ripped jeans",
+        "shoes": "casual lace-up sneakers",
+        "accessories": [
+          "gun holster with pistol",
+          "belt with buckle",
+          "wristband"
+        ]
+      },
+      "style_keywords": [
+        "realistic",
+        "gritty",
+        "action-oriented",
+        "adventurous",
+        "game character style"
+      ],
+      "forbidden_changes": [
+        "no change in gender",
+        "no removal of gun holster",
+        "no change to rugged outfit style"
+      ]
+    },
+    {
+      "id": "game_game_5",
+      "name": "game_5",
+      "image_url": "/static/templates/game/game (5).png",
+      "category_hint": "game character style",
+      "character_name": "game_5",
+      "gender": "male",
+      "appearance": {
+        "hair": "spiky and upward",
+        "eyes": "large and almond-shaped",
+        "skin": "light",
+        "body_type": "muscular and lean"
+      },
+      "outfit": {
+        "top": "sleeveless armored shoulder pad and strapped chest armor",
+        "bottom": "baggy pants with belt straps",
+        "shoes": "large combat boots",
+        "accessories": [
+          "large sword",
+          "spiked wrist guards",
+          "belt with emblem"
+        ]
+      },
+      "style_keywords": [
+        "anime",
+        "fantasy",
+        "game character"
+      ],
+      "forbidden_changes": [
+        "change hair style",
+        "remove sword",
+        "alter armor design"
+      ]
+    },
+    {
+      "id": "game_game_6",
+      "name": "game_6",
+      "image_url": "/static/templates/game/game (6).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_6",
+      "gender": "male",
+      "appearance": {
+        "hair": "hidden under hood",
+        "eyes": "shadowed, barely visible",
+        "skin": "light tone",
+        "body_type": "athletic and lean"
+      },
+      "outfit": {
+        "top": "white hooded robe with elaborate patterns",
+        "bottom": "matching white robe skirt with detailing",
+        "shoes": "not visible",
+        "accessories": [
+          "red waist sash",
+          "metal belt ornament",
+          "hidden wrist blade",
+          "brown leather glove"
+        ]
+      },
+      "style_keywords": [
+        "medieval",
+        "assassin",
+        "stealth",
+        "hooded",
+        "ornate"
+      ],
+      "forbidden_changes": [
+        "remove hood",
+        "change white color scheme",
+        "remove hidden weapon"
+      ]
+    },
+    {
+      "id": "game_game_6",
+      "name": "game_6",
+      "image_url": "/static/templates/game/game (6).png",
+      "category_hint": "game character style",
+      "character_name": "game_6",
+      "gender": "male",
+      "appearance": {
+        "hair": "medium length, black, slightly wavy",
+        "eyes": "covered by red-tinted sunglasses",
+        "skin": "light tone with visible texture",
+        "body_type": "muscular, athletic"
+      },
+      "outfit": {
+        "top": "black sleeveless tank top with red graphic print",
+        "bottom": "dark brown leather pants",
+        "shoes": "black leather boots with metallic details",
+        "accessories": [
+          "red-tinted aviator sunglasses",
+          "dog tags necklace",
+          "black wristband"
+        ]
+      },
+      "style_keywords": [
+        "cybernetic",
+        "futuristic",
+        "edgy"
+      ],
+      "forbidden_changes": [
+        "remove cybernetic arm",
+        "change hair color",
+        "remove sunglasses"
+      ]
+    },
+    {
+      "id": "game_game_7",
+      "name": "game_7",
+      "image_url": "/static/templates/game/game (7).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_7",
+      "gender": "male",
+      "appearance": {
+        "hair": "medium length blonde with a braid",
+        "eyes": "blue",
+        "skin": "fair",
+        "body_type": "slim and muscular"
+      },
+      "outfit": {
+        "top": "one-shoulder green tunic",
+        "bottom": "light beige shorts",
+        "shoes": "not visible",
+        "accessories": [
+          "bracers",
+          "quiver with arrows",
+          "earring",
+          "belt with pouches"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "warrior",
+        "adventurer"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "change eye color",
+        "remove signature green tunic"
+      ]
+    },
+    {
+      "id": "game_game_7",
+      "name": "game_7",
+      "image_url": "/static/templates/game/game (7).png",
+      "category_hint": "game character style",
+      "character_name": "game_7",
+      "gender": "male",
+      "appearance": {
+        "hair": "long white hair tied back",
+        "eyes": "yellow glowing eyes",
+        "skin": "light with scars",
+        "body_type": "muscular and broad-shouldered"
+      },
+      "outfit": {
+        "top": "chainmail with leather armor",
+        "bottom": "not visible",
+        "shoes": "not visible",
+        "accessories": [
+          "wolf medallion",
+          "sword"
+        ]
+      },
+      "style_keywords": [
+        "medieval",
+        "warrior",
+        "fantasy"
+      ],
+      "forbidden_changes": [
+        "hair color and style",
+        "eye color",
+        "scars on face",
+        "wolf medallion",
+        "chainmail and leather armor"
+      ]
+    },
+    {
+      "id": "game_game_8",
+      "name": "game_8",
+      "image_url": "/static/templates/game/game (8).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_8",
+      "gender": "male",
+      "appearance": {
+        "hair": "bald with full beard",
+        "eyes": "intense, wide open",
+        "skin": "pale with red war paint",
+        "body_type": "muscular and bulky"
+      },
+      "outfit": {
+        "top": "leather and metal shoulder armor with strapped chest",
+        "bottom": "leather belt and loincloth",
+        "shoes": "not visible",
+        "accessories": [
+          "arm bracers",
+          "belt with pouch"
+        ]
+      },
+      "style_keywords": [
+        "game character style",
+        "warrior",
+        "fantasy",
+        "battle-ready"
+      ],
+      "forbidden_changes": [
+        "no hair growth",
+        "maintain war paint pattern",
+        "keep muscular build"
+      ]
+    },
+    {
+      "id": "game_game_8",
+      "name": "game_8",
+      "image_url": "/static/templates/game/game (8).png",
+      "category_hint": "game character style",
+      "character_name": "game_8",
+      "gender": "male",
+      "appearance": {
+        "hair": "brown, short, visible at sides",
+        "eyes": "large, blue",
+        "skin": "light peach",
+        "body_type": "short and stocky"
+      },
+      "outfit": {
+        "top": "red long-sleeve shirt",
+        "bottom": "blue overalls with yellow buttons",
+        "shoes": "brown shoes",
+        "accessories": [
+          "red cap with white circle and red 'M'",
+          "white gloves"
+        ]
+      },
+      "style_keywords": [
+        "game character style",
+        "cartoonish",
+        "bright colors"
+      ],
+      "forbidden_changes": [
+        "change cap color or logo",
+        "change eye color",
+        "alter overall color or buttons"
+      ]
+    },
+    {
+      "id": "game_game_9",
+      "name": "game_9",
+      "image_url": "/static/templates/game/game (9).jpg",
+      "category_hint": "game character style",
+      "character_name": "game_9",
+      "gender": "male",
+      "appearance": {
+        "hair": "long dark tied in high ponytail",
+        "eyes": "narrow focused eyes",
+        "skin": "medium tan skin",
+        "body_type": "athletic muscular build"
+      },
+      "outfit": {
+        "top": "blue cloth wrapped around shoulder and chest",
+        "bottom": "baggy blue pants with arm guards",
+        "shoes": "barefoot with shin guards",
+        "accessories": [
+          "rope belt",
+          "metal arm guards",
+          "sword"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "ninja",
+        "warrior",
+        "game character style"
+      ],
+      "forbidden_changes": [
+        "no hair color changes",
+        "no outfit style changes",
+        "no weapon removal"
+      ]
+    },
+    {
+      "id": "game_game_9",
+      "name": "game_9",
+      "image_url": "/static/templates/game/game (9).png",
+      "category_hint": "game character style",
+      "character_name": "game_9",
+      "gender": "male",
+      "appearance": {
+        "hair": "short dark brown",
+        "eyes": "medium sized, brown",
+        "skin": "light tan",
+        "body_type": "muscular, athletic"
+      },
+      "outfit": {
+        "top": "dark blue henley shirt with rolled sleeves",
+        "bottom": "brown pants",
+        "shoes": "not visible",
+        "accessories": [
+          "brown leather shoulder holster",
+          "brown belt",
+          "wristwatch"
+        ]
+      },
+      "style_keywords": [
+        "game character style",
+        "adventurer",
+        "realistic",
+        "rugged"
+      ],
+      "forbidden_changes": [
+        "gender",
+        "hair color and style",
+        "top color and design"
+      ]
+    }
+  ],
+  "4": [
+    {
+      "id": "fantasy_fantasy_1",
+      "name": "fantasy_1",
+      "image_url": "/static/templates/fantasy/fantasy (1).jpeg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_1",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "long black with red streaks",
+        "eyes": "glowing red",
+        "skin": "pale purple",
+        "body_type": "athletic"
+      },
+      "outfit": {
+        "top": "dark armored cloak with skull shoulder pads",
+        "bottom": "black armored pants with wolf emblem belt",
+        "shoes": "black armored boots",
+        "accessories": [
+          "skull shoulder pads",
+          "wolf emblem belt"
+        ]
+      },
+      "style_keywords": [
+        "dark fantasy",
+        "mysterious",
+        "armored",
+        "stealth"
+      ],
+      "forbidden_changes": [
+        "change hair length or color",
+        "remove skull accessories",
+        "alter glowing eyes"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_1",
+      "name": "fantasy_1",
+      "image_url": "/static/templates/fantasy/fantasy (1).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_1",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "none visible",
+        "eyes": "not visible",
+        "skin": "not visible",
+        "body_type": "tall and slender"
+      },
+      "outfit": {
+        "top": "white hooded robe with gold trim and shoulder armor",
+        "bottom": "matching white long robe",
+        "shoes": "not visible",
+        "accessories": [
+          "golden gauntlets",
+          "ornate staff with blue gem"
+        ]
+      },
+      "style_keywords": [
+        "fantasy character style",
+        "mystical",
+        "ethereal"
+      ],
+      "forbidden_changes": [
+        "no visible face or skin",
+        "maintain gold and white color scheme",
+        "keep hooded robe style"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_10",
+      "name": "fantasy_10",
+      "image_url": "/static/templates/fantasy/fantasy (10).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_10",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "hidden under hood",
+        "eyes": "not visible",
+        "skin": "not visible",
+        "body_type": "muscular and armored"
+      },
+      "outfit": {
+        "top": "metallic armor with spiked pauldrons",
+        "bottom": "metallic armored legs with scale-like texture",
+        "shoes": "metal armored boots",
+        "accessories": [
+          "hooded cloak",
+          "gloves",
+          "sword"
+        ]
+      },
+      "style_keywords": [
+        "dark",
+        "fantasy",
+        "armored",
+        "mysterious"
+      ],
+      "forbidden_changes": [
+        "remove armor",
+        "show face",
+        "change weapon type"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_11",
+      "name": "fantasy_11",
+      "image_url": "/static/templates/fantasy/fantasy (11).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_11",
+      "gender": "female",
+      "appearance": {
+        "hair": "dark, mostly covered by hood",
+        "eyes": "not visible, shadowed by hood",
+        "skin": "light, visible on arms and lower face",
+        "body_type": "slim, athletic"
+      },
+      "outfit": {
+        "top": "dark sleeveless tunic or corset",
+        "bottom": "dark short skirt or shorts",
+        "shoes": "not visible",
+        "accessories": [
+          "dark hooded cape",
+          "fingerless gloves",
+          "arm guards",
+          "two curved daggers"
+        ]
+      },
+      "style_keywords": [
+        "dark",
+        "stealthy",
+        "fantasy assassin"
+      ],
+      "forbidden_changes": [
+        "remove hood",
+        "change weapon type",
+        "alter cape color"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_12",
+      "name": "fantasy_12",
+      "image_url": "/static/templates/fantasy/fantasy (12).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_12",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "long, flowing",
+        "eyes": "sharp, glowing",
+        "skin": "pale, smooth",
+        "body_type": "slim, athletic"
+      },
+      "outfit": {
+        "top": "ornate, form-fitting robe with cutouts",
+        "bottom": "matching pants with flowing extensions",
+        "shoes": "barefoot",
+        "accessories": [
+          "glowing magical symbol",
+          "armored shoulder piece"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "mystical",
+        "ethereal"
+      ],
+      "forbidden_changes": [
+        "do not change hair length",
+        "do not alter glowing symbol",
+        "do not add footwear"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_13",
+      "name": "fantasy_13",
+      "image_url": "/static/templates/fantasy/fantasy (13).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_13",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "hidden under helmet",
+        "eyes": "hidden behind helmet visor",
+        "skin": "not visible due to armor",
+        "body_type": "stocky and armored"
+      },
+      "outfit": {
+        "top": "purple full plate armor with rivets",
+        "bottom": "purple armored greaves and skirt plates",
+        "shoes": "purple armored sabatons",
+        "accessories": [
+          "helmet with visor",
+          "large purple shield",
+          "sword with blue tint"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "medieval knight",
+        "full armor",
+        "purple metallic"
+      ],
+      "forbidden_changes": [
+        "no exposure of skin",
+        "armor must stay purple",
+        "helmet must remain closed visor"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_2",
+      "name": "fantasy_2",
+      "image_url": "/static/templates/fantasy/fantasy (2).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_2",
+      "gender": "male",
+      "appearance": {
+        "hair": "long, flowing, white",
+        "eyes": "sharp, light-colored",
+        "skin": "pale",
+        "body_type": "tall, muscular"
+      },
+      "outfit": {
+        "top": "black robe with feathered shoulders and intricate patterns",
+        "bottom": "black flowing pants with armored knee guards",
+        "shoes": "black armored boots",
+        "accessories": [
+          "silver belt with ornate designs",
+          "sheathed sword",
+          "glowing gauntlets"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "dark magic",
+        "elegant armor"
+      ],
+      "forbidden_changes": [
+        "change hair color",
+        "remove sword",
+        "alter body type"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_3",
+      "name": "fantasy_3",
+      "image_url": "/static/templates/fantasy/fantasy (3).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_3",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "long, dark, straight",
+        "eyes": "glowing red, hollow sockets",
+        "skin": "skeletal, pale white",
+        "body_type": "tall, slender, armored"
+      },
+      "outfit": {
+        "top": "ornate silver armor with skull shoulder pads",
+        "bottom": "tattered dark cloak with chains",
+        "shoes": "not visible, likely armored",
+        "accessories": [
+          "crown helmet with horns",
+          "staff with skull decoration",
+          "metal orb"
+        ]
+      },
+      "style_keywords": [
+        "dark fantasy",
+        "necromancer",
+        "armored mage"
+      ],
+      "forbidden_changes": [
+        "no removal of chains",
+        "do not alter helmet design",
+        "maintain skull motifs"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_4",
+      "name": "fantasy_4",
+      "image_url": "/static/templates/fantasy/fantasy (4).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_4",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "bald",
+        "eyes": "deep-set, small",
+        "skin": "greenish, rough textured",
+        "body_type": "thin, muscular"
+      },
+      "outfit": {
+        "top": "none",
+        "bottom": "none",
+        "shoes": "none",
+        "accessories": []
+      },
+      "style_keywords": [
+        "fantasy",
+        "creature",
+        "goblin",
+        "monstrous",
+        "detailed skin"
+      ],
+      "forbidden_changes": [
+        "no hair added",
+        "no clothing added",
+        "no color change in skin",
+        "no change in body type"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_5",
+      "name": "fantasy_5",
+      "image_url": "/static/templates/fantasy/fantasy (5).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_5",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "hidden under hood",
+        "eyes": "glowing blue eyes",
+        "skin": "skeletal, skull face",
+        "body_type": "tall and slender"
+      },
+      "outfit": {
+        "top": "dark ornate robe with shoulder armor",
+        "bottom": "long purple robe with golden patterns",
+        "shoes": "hidden under robe",
+        "accessories": [
+          "magic orb",
+          "chain decorations",
+          "large spellbook"
+        ]
+      },
+      "style_keywords": [
+        "dark magic",
+        "necromancer",
+        "arcane",
+        "fantasy",
+        "mystical"
+      ],
+      "forbidden_changes": [
+        "skull face must remain visible",
+        "glowing blue eyes must not change color",
+        "ornate robe and shoulder armor must remain intact"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_6",
+      "name": "fantasy_6",
+      "image_url": "/static/templates/fantasy/fantasy (6).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_6",
+      "gender": "female",
+      "appearance": {
+        "hair": "long blonde braid with ribbons",
+        "eyes": "brown, looking upwards",
+        "skin": "light complexion",
+        "body_type": "slim and athletic"
+      },
+      "outfit": {
+        "top": "hooded armor with long sleeves",
+        "bottom": "dark fitted pants",
+        "shoes": "dark boots",
+        "accessories": [
+          "bow",
+          "quiver",
+          "gloves"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "adventurer",
+        "archer"
+      ],
+      "forbidden_changes": [
+        "no change to hair length or color",
+        "keep bow and quiver present",
+        "maintain hooded armor style"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_7",
+      "name": "fantasy_7",
+      "image_url": "/static/templates/fantasy/fantasy (7).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_7",
+      "gender": "male",
+      "appearance": {
+        "hair": "brown, long braided beard and partial shaved head",
+        "eyes": "intense, visible",
+        "skin": "fair, muscular",
+        "body_type": "large, heavily muscled"
+      },
+      "outfit": {
+        "top": "spiked black and gold armor with fur accents",
+        "bottom": "fur loincloth with chain belt and spiked armor",
+        "shoes": "heavy armored boots with spikes",
+        "accessories": [
+          "chain belt with runed tags",
+          "fur trim"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "barbarian",
+        "warrior"
+      ],
+      "forbidden_changes": [
+        "no hair style change",
+        "no armor removal",
+        "maintain muscular body"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_8",
+      "name": "fantasy_8",
+      "image_url": "/static/templates/fantasy/fantasy (8).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_8",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "none, skeletal head",
+        "eyes": "glowing blue-green eye sockets",
+        "skin": "skeletal, blue-green glowing",
+        "body_type": "tall, bony, skeletal"
+      },
+      "outfit": {
+        "top": "tattered dark robe with ornate silver chest armor and shoulder plates",
+        "bottom": "tattered dark robe extending to feet",
+        "shoes": "not visible",
+        "accessories": [
+          "silver crown with spikes",
+          "ornate staff with glowing top"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "necromancer",
+        "dark magic",
+        "skeletal",
+        "ethereal glow"
+      ],
+      "forbidden_changes": [
+        "do not add flesh or hair",
+        "do not remove glowing elements",
+        "do not change armor style"
+      ]
+    },
+    {
+      "id": "fantasy_fantasy_9",
+      "name": "fantasy_9",
+      "image_url": "/static/templates/fantasy/fantasy (9).jpg",
+      "category_hint": "fantasy character style",
+      "character_name": "fantasy_9",
+      "gender": "female",
+      "appearance": {
+        "hair": "long blonde",
+        "eyes": "blue",
+        "skin": "fair",
+        "body_type": "slim"
+      },
+      "outfit": {
+        "top": "white and red robe with gold accents",
+        "bottom": "long gold skirt",
+        "shoes": "white sandals",
+        "accessories": [
+          "golden cross staff",
+          "book with cross",
+          "hooded white cape"
+        ]
+      },
+      "style_keywords": [
+        "fantasy",
+        "cleric",
+        "holy",
+        "medieval",
+        "magic"
+      ],
+      "forbidden_changes": [
+        "no hair color change",
+        "keep religious symbols",
+        "maintain robe length"
+      ]
+    }
+  ]
+}
