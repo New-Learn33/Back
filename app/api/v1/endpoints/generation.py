@@ -259,6 +259,7 @@ from app.utils.success_response import success_response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
+from fastapi.responses import RedirectResponse
 
 from app.services.r2_service import upload_local_file_to_r2
 
@@ -565,4 +566,28 @@ def get_generation_result(job_id: int, db: Session = Depends(get_db)):
             "video_url": job.video_url
         },
         "영상 정보 조회에 성공했습니다."
+    )
+
+
+# 영상 다운로드 API
+@router.get("/jobs/{job_id}/download")
+def get_video_download(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.status != "completed":
+        return error_response(
+            400,
+            "REQUEST_001",
+            "아직 영상 생성이 완료되지 않았습니다."
+        )
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "download_url": job.video_url
+        },
+        "다운로드 URL 조회 성공"
     )
