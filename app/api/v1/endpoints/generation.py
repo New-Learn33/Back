@@ -279,29 +279,32 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     script_result = generate_three_cut_script(request)
 
-    # 네 프로젝트에서 GenerationJob을 이미 쓰고 있으면 이 부분 유지/수정
-    # job = GenerationJob(
-    #     user_id=1,
-    #     title=script_result["title"],
-    #     prompt=request.prompt,
-    #     category_id=request.category_id,
-    #     status="pending",
-    #     progress=0
-    # )
-    # db.add(job)
-    # db.commit()
-    # db.refresh(job)
-    #
-    # job_id = job.id
+    job = GenerationJob(
+        user_id=1,  # 테스트용
+        title=script_result["title"],
+        prompt=request.prompt,
+        category_id=request.category_id,
+        status="pending",
+        progress=0
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    job_id = job.id
 
     # DB 저장 안 쓰면 임시 job_id
-    job_id = random.randint(100000, 999999)
+    # job_id = random.randint(100000, 999999)
 
     image_results = generate_three_cut_images(
         job_id=job_id,
         character_profile=selected_character,
         scenes=script_result["scenes"],
     )
+
+    job.status = "processing"
+    job.progress = 30
+    db.commit()
 
     return {
         "success": True,
