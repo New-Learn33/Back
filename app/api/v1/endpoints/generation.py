@@ -242,314 +242,30 @@
 #         },
 #     }
 
-
-# def url_to_file_path(url: str):
-#     clean = url.lstrip("/")
-#     return os.path.join("app", clean)
-
-
-# # 자막 합성 API
-# @router.post("/render/subtitles")
-# def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_db)):
-#     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
-#     if not job:
-#         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
-
-#     try:
-#         scene_map = {scene.scene_order: scene for scene in request.scenes}
-#         results = []
-
-#         for img in request.images:
-#             scene = scene_map.get(img.scene_order)
-
-#             if not scene:
-#                 return error_response(400, "REQUEST_001", "scene 정보가 없습니다.")
-
-#             input_path = url_to_file_path(img.image_url)
-#             output_path = f"app/static/rendered/{request.job_id}_{img.scene_order}.png"
-
-#             render_subtitle_image(
-#                 input_path,
-#                 output_path,
-#                 scene.dialogue
-#             )
-
-#             results.append({
-#                 "scene_order": img.scene_order,
-#                 "image_url": f"/static/rendered/{request.job_id}_{img.scene_order}.png"
-#             })
-
-#         job.status = "processing"
-#         job.progress = 60
-#         db.commit()
-
-#         return success_response(
-#             {
-#                 "job_id": request.job_id,
-#                 "subtitle_images": results
-#             },
-#             "자막 생성 성공"
-#         )
-
-#     except FileNotFoundError:
-#         job.status = "failed"
-#         db.commit()
-#         return error_response(404, "REQUEST_007", "이미지를 찾을 수 없습니다.")
-
-#     except Exception as e:
-#         job.status = "failed"
-#         db.commit()
-#         return error_response(500, "SERVER_001", str(e))
-    
-
-# # 영상 생성 API
-# @router.post("/render/video")
-# def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
-
-#     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
-#     if not job:
-#         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
-
-#     try:
-#         job.status = "processing"
-#         job.progress = 80
-#         db.commit()
-
-#         sorted_images = sorted(request.subtitle_images, key=lambda x: x.scene_order)
-#         image_paths = [url_to_file_path(i.image_url) for i in sorted_images]
-
-#         output_path = f"app/static/videos/{request.job_id}.mp4"
-#         video_url = f"/static/videos/{request.job_id}.mp4"
-
-#         create_video_from_images(image_paths, output_path)
-
-#         job.video_url = video_url
-#         job.status = "completed"
-#         job.progress = 100
-
-#         existing_video = db.query(Video).filter(Video.job_id == job.id).first()
-
-#         if existing_video:
-#             existing_video.user_id = job.user_id
-#             existing_video.category_id = job.category_id
-#             existing_video.title = job.title
-#             existing_video.prompt = job.prompt
-#             existing_video.thumbnail_url = job.thumbnail_url
-#             existing_video.video_url = video_url
-#         else:
-#             new_video = Video(
-#                 job_id=job.id,
-#                 user_id=job.user_id,
-#                 category_id=job.category_id,
-#                 title=job.title,
-#                 prompt=job.prompt,
-#                 thumbnail_url=job.thumbnail_url,
-#                 video_url=video_url
-#             )
-#             db.add(new_video)
-
-#         db.commit()
-
-#         return success_response(
-#             {
-#                 "job_id": request.job_id,
-#                 "status": job.status,
-#                 "video_url": job.video_url
-#             },
-#             "영상 생성 성공"
-#         )
-
-#     except Exception as e:
-#         job.status = "failed"
-#         job.progress = 0
-#         db.commit()
-#         return error_response(500, "SERVER_001", str(e))
-    
-
-# # 썸네일 선택 (사진 중에 선택) API
-# @router.post("/thumbnail/select")
-# def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_db)):
-#     try:
-#         file_path = url_to_file_path(request.thumbnail_url)
-
-#         if not os.path.exists(file_path):
-#             return error_response(404, "REQUEST_007", "선택한 대표 이미지 파일이 존재하지 않습니다.")
-
-#         job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
-#         if not job:
-#             return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
-
-#         job.thumbnail_url = request.thumbnail_url
-
-#         video = db.query(Video).filter(Video.job_id == request.job_id).first()
-#         if video:
-#             video.thumbnail_url = request.thumbnail_url
-
-#         db.commit()
-
-#         return success_response(
-#             {
-#                 "job_id": request.job_id,
-#                 "thumbnail_url": request.thumbnail_url
-#             },
-#             "대표 이미지 선택 성공"
-#         )
-
-#     except Exception:
-#         return error_response(500, "SERVER_001", "대표 이미지 선택 중 오류가 발생했습니다.")
-
-
-# # 영상 생성 상태 조회 API
-# @router.get("/jobs/{job_id}")
-# def get_generation_status(job_id: int, db: Session = Depends(get_db)):
-#     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-
-#     if not job:
-#         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
-
-#     return success_response(
-#         {
-#             "job_id": job.id,
-#             "status": job.status,
-#             "progress": job.progress
-#         },
-#         "영상 생성 상태 조회에 성공했습니다."
-#     )
-
-
-# # 영상 생성 결과 조회 API
-# @router.get("/jobs/{job_id}/result")
-# def get_generation_result(job_id: int, db: Session = Depends(get_db)):
-#     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-
-#     if not job:
-#         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
-
-#     # 아직 생성 중이면 막음
-#     if job.status != "completed":
-#         return error_response(
-#             400,
-#             "REQUEST_001",
-#             "아직 영상 생성이 완료되지 않았습니다."
-#         )
-
-#     return success_response(
-#         {
-#             "job_id": job.id,
-#             "status": job.status,
-#             "video_url": job.video_url
-#         },
-#         "영상 정보 조회에 성공했습니다."
-#     )
-
-
-
-
-
-
-
-# import random
-# from fastapi import APIRouter, Depends, HTTPException
-# from sqlalchemy.orm import Session
-
-# from app.db.database import get_db
-# from app.schemas.generation_schema import GenerationRequest, GenerationResponse
-# from app.services.script_service import generate_three_cut_script
-# from app.services.image_service import generate_three_cut_images
-# from app.data.character_profiles_loader import pick_random_character
-
-# # 네가 이미 쓰고 있는 모델이 있으면 유지
-# # from app.models.generation_job import GenerationJob
-
-# router = APIRouter()
-
-
-# @router.post("", response_model=GenerationResponse)
-# def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
-#     selected_character = pick_random_character(request.category_id)
-
-#     if not selected_character:
-#         raise HTTPException(
-#             status_code=400,
-#             detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
-#         )
-
-#     script_result = generate_three_cut_script(request)
-
-#     # 네 프로젝트에서 GenerationJob을 이미 쓰고 있으면 이 부분 유지/수정
-#     # job = GenerationJob(
-#     #     user_id=1,
-#     #     title=script_result["title"],
-#     #     prompt=request.prompt,
-#     #     category_id=request.category_id,
-#     #     status="pending",
-#     #     progress=0
-#     # )
-#     # db.add(job)
-#     # db.commit()
-#     # db.refresh(job)
-#     #
-#     # job_id = job.id
-
-#     # DB 저장 안 쓰면 임시 job_id
-#     job_id = random.randint(100000, 999999)
-
-#     image_results = generate_three_cut_images(
-#         job_id=job_id,
-#         character_profile=selected_character,
-#         scenes=script_result["scenes"],
-#     )
-
-#     return {
-#         "success": True,
-#         "message": "3컷 생성 성공",
-#         "data": {
-#             "job_id": job_id,
-#             "title": script_result["title"],
-#             "category_id": request.category_id,
-#             "selected_template_image": {
-#                 "id": selected_character["id"],
-#                 "name": selected_character["name"],
-#                 "image_url": selected_character["image_url"],
-#             },
-#             "scenes": script_result["scenes"],
-#             "images": [
-#                 {
-#                     "scene_order": img["scene_order"],
-#                     "image_url": img["image_url"],
-#                 }
-#                 for img in image_results
-#             ],
-#         },
-#     }
-
-# ----------------------------------------------
-# 복원
-
 import os
-import random
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
 from app.models.video import Video
-from app.db.database import get_db
-from app.models.generation_job import GenerationJob
+from fastapi import APIRouter, Depends, HTTPException
 
-from app.schemas.generation_schema import (
-    GenerationRequest,
-    GenerationResponse,
-    RenderSubtitleRequest,
-    RenderVideoRequest,
-    ThumbnailSelectRequest,
-)
-
+from app.schemas.generation_schema import GenerationRequest, GenerationResponse
+from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
+from app.schemas.generation_schema import ThumbnailSelectRequest
 from app.services.script_service import generate_three_cut_script
 from app.services.image_service import generate_three_cut_images
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
 
 from app.data.character_profiles_loader import pick_random_character
+from app.services.subtitle_render_service import render_subtitle_image
+from app.services.video_render_service import create_video_from_images
+from app.utils.error_response import error_response
+from app.utils.success_response import success_response
+from sqlalchemy.orm import Session
+from app.db.database import get_db
+from app.models.generation_job import GenerationJob
+from fastapi.responses import RedirectResponse
+
+from app.services.r2_service import upload_local_file_to_r2
+
 
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
@@ -559,6 +275,21 @@ from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 
 
 router = APIRouter()
+
+# 로컬 작업 경로용 함수
+def local_url_to_file_path(url: str):
+    clean = url.lstrip("/")
+    return os.path.join("app", clean)
+
+def generated_image_local_path(job_id: int, scene_order: int):
+    return f"app/static/generated/{job_id}_{scene_order}.png"
+
+def rendered_image_local_path(job_id: int, scene_order: int):
+    return f"app/static/rendered/{job_id}_{scene_order}.png"
+
+def video_local_path(job_id: int):
+    return f"app/static/videos/{job_id}.mp4"
+
 
 @router.post("", response_model=GenerationResponse)
 def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
@@ -572,29 +303,50 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     script_result = generate_three_cut_script(request)
 
-    # 네 프로젝트에서 GenerationJob을 이미 쓰고 있으면 이 부분 유지/수정
-    # job = GenerationJob(
-    #     user_id=1,
-    #     title=script_result["title"],
-    #     prompt=request.prompt,
-    #     category_id=request.category_id,
-    #     status="pending",
-    #     progress=0
-    # )
-    # db.add(job)
-    # db.commit()
-    # db.refresh(job)
-    #
-    # job_id = job.id
+    job = GenerationJob(
+        user_id=1,  # 테스트용
+        title=script_result["title"],
+        prompt=request.prompt,
+        category_id=request.category_id,
+        status="pending",
+        progress=0
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    job_id = job.id
 
     # DB 저장 안 쓰면 임시 job_id
-    job_id = random.randint(100000, 999999)
+    # job_id = random.randint(100000, 999999)
 
     image_results = generate_three_cut_images(
         job_id=job_id,
         character_profile=selected_character,
         scenes=script_result["scenes"],
     )
+
+    uploaded_images = []
+
+    for img in image_results:
+        scene_order = img["scene_order"]
+        local_path = local_url_to_file_path(img["image_url"])
+
+        uploaded = upload_local_file_to_r2(
+            local_file_path=local_path,
+            folder="generated",
+            filename=f"{job_id}_{scene_order}.png",
+            content_type="image/png"
+        )
+
+        uploaded_images.append({
+            "scene_order": scene_order,
+            "image_url": uploaded["url"],
+        })
+
+    job.status = "processing"
+    job.progress = 30
+    db.commit()
 
     return {
         "success": True,
@@ -609,20 +361,9 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
                 "image_url": selected_character["image_url"],
             },
             "scenes": script_result["scenes"],
-            "images": [
-                {
-                    "scene_order": img["scene_order"],
-                    "image_url": img["image_url"],
-                }
-                for img in image_results
-            ],
+            "images": uploaded_images
         },
     }
-
-
-def url_to_file_path(url: str):
-    clean = url.lstrip("/")
-    return os.path.join("app", clean)
 
 
 # 자막 합성 API
@@ -642,8 +383,8 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
             if not scene:
                 return error_response(400, "REQUEST_001", "scene 정보가 없습니다.")
 
-            input_path = url_to_file_path(img.image_url)
-            output_path = f"app/static/rendered/{request.job_id}_{img.scene_order}.png"
+            input_path = generated_image_local_path(request.job_id, img.scene_order)
+            output_path = rendered_image_local_path(request.job_id, img.scene_order)
 
             render_subtitle_image(
                 input_path,
@@ -651,9 +392,16 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
                 scene.dialogue
             )
 
+            uploaded = upload_local_file_to_r2(
+                local_file_path=output_path,
+                folder="rendered",
+                filename=f"{request.job_id}_{img.scene_order}.png",
+                content_type="image/png"
+            )
+
             results.append({
                 "scene_order": img.scene_order,
-                "image_url": f"/static/rendered/{request.job_id}_{img.scene_order}.png"
+                "image_url": uploaded["url"]
             })
 
         job.status = "processing"
@@ -677,7 +425,7 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
         job.status = "failed"
         db.commit()
         return error_response(500, "SERVER_001", str(e))
-
+    
 
 # 영상 생성 API
 @router.post("/render/video")
@@ -692,14 +440,26 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
         db.commit()
 
         sorted_images = sorted(request.subtitle_images, key=lambda x: x.scene_order)
-        image_paths = [url_to_file_path(i.image_url) for i in sorted_images]
+        image_paths = [
+            rendered_image_local_path(request.job_id, img.scene_order)
+            for img in sorted_images
+        ]
 
-        output_path = f"app/static/videos/{request.job_id}.mp4"
-        video_url = f"/static/videos/{request.job_id}.mp4"
+        output_path = video_local_path(request.job_id)
 
         create_video_from_images(image_paths, output_path)
 
+        uploaded_video = upload_local_file_to_r2(
+            local_file_path=output_path,
+            folder="videos",
+            filename=f"{request.job_id}.mp4",
+            content_type="video/mp4"
+        )
+
+        video_url = uploaded_video["url"]
+
         job.video_url = video_url
+
         job.status = "completed"
         job.progress = 100
 
@@ -740,16 +500,12 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
         job.progress = 0
         db.commit()
         return error_response(500, "SERVER_001", str(e))
-
+    
 
 # 썸네일 선택 (사진 중에 선택) API
 @router.post("/thumbnail/select")
 def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_db)):
     try:
-        file_path = url_to_file_path(request.thumbnail_url)
-
-        if not os.path.exists(file_path):
-            return error_response(404, "REQUEST_007", "선택한 대표 이미지 파일이 존재하지 않습니다.")
 
         job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
         if not job:
@@ -801,6 +557,7 @@ def get_generation_result(job_id: int, db: Session = Depends(get_db)):
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
 
+    # 아직 생성 중이면 막음
     if job.status != "completed":
         return error_response(
             400,
@@ -815,4 +572,28 @@ def get_generation_result(job_id: int, db: Session = Depends(get_db)):
             "video_url": job.video_url
         },
         "영상 정보 조회에 성공했습니다."
+    )
+
+
+# 영상 다운로드 API
+@router.get("/jobs/{job_id}/download")
+def get_video_download(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.status != "completed":
+        return error_response(
+            400,
+            "REQUEST_001",
+            "아직 영상 생성이 완료되지 않았습니다."
+        )
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "download_url": job.video_url
+        },
+        "다운로드 URL 조회 성공"
     )
