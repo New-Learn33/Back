@@ -57,7 +57,7 @@ Fixed character identity:
 - style keywords: {style_text}
 
 Consistency rules:
-- same exact character identity in all 3 scenes
+- same exact character identity in all 6 scenes
 - same hairstyle, same outfit, same outfit colors, same accessories
 - keep the character fully clothed
 - no sexualized pose
@@ -94,7 +94,7 @@ Image style rules:
     return f"{character_anchor}\n\n{scene_prompt}".strip()
 
 
-def generate_three_cut_images(job_id: int, character_profile: dict, scenes: list):
+def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
