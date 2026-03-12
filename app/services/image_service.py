@@ -132,3 +132,31 @@ def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
             raise HTTPException(status_code=500, detail=f"이미지 생성 실패: {str(e)}")
 
     return results
+
+
+def generate_single_image(job_id: int, character_profile: dict, scene: dict):
+    """이미지 1장만 생성 (SSE 스트리밍용)"""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise Exception("OPENAI_API_KEY가 설정되지 않았습니다.")
+
+    prompt = build_image_prompt(character_profile, scene)
+
+    response = client.images.generate(
+        model="gpt-image-1",
+        prompt=prompt,
+        size="1024x1024",
+        quality="medium",
+    )
+
+    if not response.data or not response.data[0].b64_json:
+        raise Exception("이미지 생성 응답이 비어 있습니다.")
+
+    filename = f"{job_id}_{scene['scene_order']}.png"
+    image_url = save_b64_image_to_file(response.data[0].b64_json, filename)
+
+    return {
+        "scene_order": scene["scene_order"],
+        "image_url": image_url,
+        "prompt_used": prompt,
+    }
