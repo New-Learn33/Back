@@ -249,8 +249,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
 from app.schemas.generation_schema import ThumbnailSelectRequest
-from app.services.script_service import generate_three_cut_script
-from app.services.image_service import generate_three_cut_images
+from app.services.script_service import generate_six_cut_script
+from app.services.image_service import generate_six_cut_images
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
 
@@ -301,7 +301,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
             detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
         )
 
-    script_result = generate_three_cut_script(request)
+    script_result = generate_six_cut_script(request)
 
     job = GenerationJob(
         user_id=1,  # 테스트용
@@ -320,7 +320,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
     # DB 저장 안 쓰면 임시 job_id
     # job_id = random.randint(100000, 999999)
 
-    image_results = generate_three_cut_images(
+    image_results = generate_six_cut_images(
         job_id=job_id,
         character_profile=selected_character,
         scenes=script_result["scenes"],
@@ -350,7 +350,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": "3컷 생성 성공",
+        "message": "6컷 생성 성공",
         "data": {
             "job_id": job_id,
             "title": script_result["title"],
