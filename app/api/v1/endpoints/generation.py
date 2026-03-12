@@ -242,7 +242,7 @@
 #         },
 #     }
 
-import random, os
+import os
 from app.models.video import Video
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -259,12 +259,29 @@ from app.utils.success_response import success_response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
+from fastapi.responses import RedirectResponse
+
+from app.services.r2_service import upload_local_file_to_r2
 
 
 # 네가 이미 쓰고 있는 모델이 있으면 유지
 # from app.models.generation_job import GenerationJob
 
 router = APIRouter()
+
+# 로컬 작업 경로용 함수
+def local_url_to_file_path(url: str):
+    clean = url.lstrip("/")
+    return os.path.join("app", clean)
+
+def generated_image_local_path(job_id: int, scene_order: int):
+    return f"app/static/generated/{job_id}_{scene_order}.png"
+
+def rendered_image_local_path(job_id: int, scene_order: int):
+    return f"app/static/rendered/{job_id}_{scene_order}.png"
+
+def video_local_path(job_id: int):
+    return f"app/static/videos/{job_id}.mp4"
 
 
 @router.post("", response_model=GenerationResponse)
@@ -302,6 +319,24 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
         scenes=script_result["scenes"],
     )
 
+    uploaded_images = []
+
+    for img in image_results:
+        scene_order = img["scene_order"]
+        local_path = local_url_to_file_path(img["image_url"])
+
+        uploaded = upload_local_file_to_r2(
+            local_file_path=local_path,
+            folder="generated",
+            filename=f"{job_id}_{scene_order}.png",
+            content_type="image/png"
+        )
+
+        uploaded_images.append({
+            "scene_order": scene_order,
+            "image_url": uploaded["url"],
+        })
+
     job.status = "processing"
     job.progress = 30
     db.commit()
@@ -319,21 +354,9 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
                 "image_url": selected_character["image_url"],
             },
             "scenes": script_result["scenes"],
-            "images": [
-                {
-                    "scene_order": img["scene_order"],
-                    "image_url": img["image_url"],
-                }
-                for img in image_results
-            ],
+            "images": uploaded_images
         },
     }
-
-
-
-def url_to_file_path(url: str):
-    clean = url.lstrip("/")
-    return os.path.join("app", clean)
 
 
 # 자막 합성 API
@@ -353,8 +376,8 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
             if not scene:
                 return error_response(400, "REQUEST_001", "scene 정보가 없습니다.")
 
-            input_path = url_to_file_path(img.image_url)
-            output_path = f"app/static/rendered/{request.job_id}_{img.scene_order}.png"
+            input_path = generated_image_local_path(request.job_id, img.scene_order)
+            output_path = rendered_image_local_path(request.job_id, img.scene_order)
 
             render_subtitle_image(
                 input_path,
@@ -362,9 +385,16 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
                 scene.dialogue
             )
 
+            uploaded = upload_local_file_to_r2(
+                local_file_path=output_path,
+                folder="rendered",
+                filename=f"{request.job_id}_{img.scene_order}.png",
+                content_type="image/png"
+            )
+
             results.append({
                 "scene_order": img.scene_order,
-                "image_url": f"/static/rendered/{request.job_id}_{img.scene_order}.png"
+                "image_url": uploaded["url"]
             })
 
         job.status = "processing"
@@ -404,14 +434,26 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
         db.commit()
 
         sorted_images = sorted(request.subtitle_images, key=lambda x: x.scene_order)
-        image_paths = [url_to_file_path(i.image_url) for i in sorted_images]
+        image_paths = [
+            rendered_image_local_path(request.job_id, img.scene_order)
+            for img in sorted_images
+        ]
 
-        output_path = f"app/static/videos/{request.job_id}.mp4"
-        video_url = f"/static/videos/{request.job_id}.mp4"
+        output_path = video_local_path(request.job_id)
 
         create_video_from_images(image_paths, output_path)
 
+        uploaded_video = upload_local_file_to_r2(
+            local_file_path=output_path,
+            folder="videos",
+            filename=f"{request.job_id}.mp4",
+            content_type="video/mp4"
+        )
+
+        video_url = uploaded_video["url"]
+
         job.video_url = video_url
+
         job.status = "completed"
         job.progress = 100
 
@@ -458,10 +500,6 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
 @router.post("/thumbnail/select")
 def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_db)):
     try:
-        file_path = url_to_file_path(request.thumbnail_url)
-
-        if not os.path.exists(file_path):
-            return error_response(404, "REQUEST_007", "선택한 대표 이미지 파일이 존재하지 않습니다.")
 
         job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
         if not job:
@@ -528,4 +566,28 @@ def get_generation_result(job_id: int, db: Session = Depends(get_db)):
             "video_url": job.video_url
         },
         "영상 정보 조회에 성공했습니다."
+    )
+
+
+# 영상 다운로드 API
+@router.get("/jobs/{job_id}/download")
+def get_video_download(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.status != "completed":
+        return error_response(
+            400,
+            "REQUEST_001",
+            "아직 영상 생성이 완료되지 않았습니다."
+        )
+
+    return success_response(
+        {
+            "job_id": job.id,
+            "download_url": job.video_url
+        },
+        "다운로드 URL 조회 성공"
     )

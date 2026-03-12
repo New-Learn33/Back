@@ -32,3 +32,6 @@ bcrypt==4.2.1
 
 #이미지 자막 합성
 Pillow
+
+#R2
+boto3
