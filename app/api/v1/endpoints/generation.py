@@ -251,8 +251,15 @@ from fastapi.responses import StreamingResponse
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
 from app.schemas.generation_schema import ThumbnailSelectRequest
-from app.services.script_service import generate_three_cut_script
-from app.services.image_service import generate_three_cut_images, generate_single_image
+
+# from app.services.script_service import generate_three_cut_script
+# from app.services.image_service import generate_three_cut_images
+from app.services.image_service generate_single_image
+from app.services.script_service import generate_six_cut_script
+from app.services.image_service import generate_six_cut_images
+from app.services.subtitle_render_service import render_subtitle_image
+from app.services.video_render_service import create_video_from_images
+
 from app.data.character_profiles_loader import pick_random_character
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
@@ -266,8 +273,12 @@ from fastapi.responses import RedirectResponse
 from app.services.r2_service import upload_local_file_to_r2
 
 
-# 네가 이미 쓰고 있는 모델이 있으면 유지
-# from app.models.generation_job import GenerationJob
+from app.utils.error_response import error_response
+from app.utils.success_response import success_response
+
+
+from app.schemas.generation_schema import GenerationRequest, GenerationResponse
+
 
 router = APIRouter()
 
@@ -296,7 +307,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
             detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
         )
 
-    script_result = generate_three_cut_script(request)
+    script_result = generate_six_cut_script(request)
 
     job = GenerationJob(
         user_id=1,  # 테스트용
@@ -315,7 +326,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
     # DB 저장 안 쓰면 임시 job_id
     # job_id = random.randint(100000, 999999)
 
-    image_results = generate_three_cut_images(
+    image_results = generate_six_cut_images(
         job_id=job_id,
         character_profile=selected_character,
         scenes=script_result["scenes"],
@@ -345,7 +356,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": "3컷 생성 성공",
+        "message": "6컷 생성 성공",
         "data": {
             "job_id": job_id,
             "title": script_result["title"],
@@ -528,7 +539,6 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
 # 영상 생성 API
 @router.post("/render/video")
 def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
-
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
