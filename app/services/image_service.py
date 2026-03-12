@@ -16,15 +16,6 @@ GENERATED_DIR = os.path.join(STATIC_DIR, "generated")
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
 
-def build_image_prompt(category_hint: str, character_name: str, scene_order: int, dialogue: str, subtitle_text: str) -> str:
-    return (
-        f"{category_hint}, same character consistency, "
-        f"main character: {character_name}, "
-        f"webtoon style, scene {scene_order}, "
-        f"{subtitle_text}, emotion based on dialogue: {dialogue}"
-    )
-
-
 def save_b64_image_to_file(b64_data: str, filename: str) -> str:
     file_path = os.path.join(GENERATED_DIR, filename)
 
@@ -34,7 +25,77 @@ def save_b64_image_to_file(b64_data: str, filename: str) -> str:
     return f"/static/generated/{filename}"
 
 
-def generate_three_cut_images(job_id: int, template_info: dict, scenes: list):
+def build_character_anchor(character_profile: dict) -> str:
+    appearance = character_profile.get("appearance", {})
+    outfit = character_profile.get("outfit", {})
+    style_keywords = character_profile.get("style_keywords", [])
+    forbidden_changes = character_profile.get("forbidden_changes", [])
+
+    accessories = ", ".join(outfit.get("accessories", []))
+    style_text = ", ".join(style_keywords)
+    forbidden_text = ", ".join(forbidden_changes)
+
+    gender = character_profile.get("gender", "ambiguous")
+    hair = appearance.get("hair", "")
+    eyes = appearance.get("eyes", "")
+
+    top = outfit.get("top", "")
+    bottom = outfit.get("bottom", "")
+    shoes = outfit.get("shoes", "")
+
+    anchor_prompt = f"""
+Create a safe, non-explicit, fully clothed character illustration.
+
+Fixed character identity:
+- category style: {character_profile.get("category_hint", "")}
+- gender presentation: {gender}
+- hair: {hair}
+- eyes: {eyes}
+- outfit top: {top}
+- outfit bottom: {bottom}
+- shoes: {shoes}
+- accessories: {accessories}
+- style keywords: {style_text}
+
+Consistency rules:
+- same exact character identity in all 3 scenes
+- same hairstyle, same outfit, same outfit colors, same accessories
+- keep the character fully clothed
+- no sexualized pose
+- no revealing clothes
+- no body emphasis
+- no nudity
+- no suggestive content
+- {forbidden_text}
+"""
+    return anchor_prompt.strip()
+
+
+def build_image_prompt(character_profile: dict, scene: dict) -> str:
+    character_anchor = build_character_anchor(character_profile)
+
+    scene_prompt = f"""
+Scene instructions:
+- scene order: {scene["scene_order"]}
+- scene situation: {scene["subtitle_text"]}
+- emotional tone: {scene["dialogue"]}
+
+Image style rules:
+- webtoon style illustration
+- cinematic composition
+- character-focused scene
+- no text
+- no speech bubbles
+- no captions
+- no watermark
+- no UI elements
+- safe for general audience
+"""
+
+    return f"{character_anchor}\n\n{scene_prompt}".strip()
+
+
+def generate_three_cut_images(job_id: int, character_profile: dict, scenes: list):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -42,13 +103,7 @@ def generate_three_cut_images(job_id: int, template_info: dict, scenes: list):
     results = []
 
     for scene in scenes:
-        prompt = build_image_prompt(
-            category_hint=template_info["category_hint"],
-            character_name=template_info["character_name"],
-            scene_order=scene["scene_order"],
-            dialogue=scene["dialogue"],
-            subtitle_text=scene["subtitle_text"],
-        )
+        prompt = build_image_prompt(character_profile, scene)
 
         try:
             response = client.images.generate(
