@@ -1,6 +1,5 @@
 import os
 import base64
-from uuid import uuid4
 from dotenv import load_dotenv
 from openai import OpenAI
 from fastapi import HTTPException
@@ -116,7 +115,7 @@ def generate_three_cut_images(job_id: int, character_profile: dict, scenes: list
             if not response.data or not response.data[0].b64_json:
                 raise HTTPException(status_code=500, detail="이미지 생성 응답이 비어 있습니다.")
 
-            filename = f"{job_id}_{scene['scene_order']}_{uuid4().hex}.png"
+            filename = f"{job_id}_{scene['scene_order']}.png"
             image_url = save_b64_image_to_file(response.data[0].b64_json, filename)
 
             results.append(
