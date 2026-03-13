@@ -72,3 +72,19 @@ class RenderVideoRequest(BaseModel):
 class ThumbnailSelectRequest(BaseModel):
     job_id: int
     thumbnail_url: str
+
+
+class StabilitySceneImageItem(BaseModel):
+    scene_order: int
+    image_url: str
+
+
+class StabilitySceneDialogueItem(BaseModel):
+    scene_order: int
+    dialogue: str
+
+
+class StabilityRenderVideoRequest(BaseModel):
+    job_id: int
+    images: List[StabilitySceneImageItem]
+    scenes: List[StabilitySceneDialogueItem]

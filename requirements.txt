@@ -35,3 +35,7 @@ Pillow
 
 #R2
 boto3
+
+#Replicate
+replicate
+requests

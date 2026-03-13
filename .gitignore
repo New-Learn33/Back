@@ -19,3 +19,11 @@ venv/
 app/static/generated/*
 app/static/rendered/*
 app/static/videos/*
+
+app/static/video_clips/*
+!app/static/video_clips/
+!app/static/video_clips/.gitkeep
+
+app/static/subtitle_clips/*
+!app/static/subtitle_clips/
+!app/static/subtitle_clips/.gitkeep

@@ -269,6 +269,12 @@ from app.models.generation_job import GenerationJob
 
 from app.services.r2_service import upload_local_file_to_r2
 
+from app.services.svd_service import generate_video_from_image
+from app.services.video_subtitle_service import burn_subtitle_to_video
+from app.services.video_concat_service import concat_video_clips
+from app.schemas.generation_schema import StabilityRenderVideoRequest
+
+
 router = APIRouter()
 
 # 로컬 작업 경로용 함수
@@ -703,3 +709,114 @@ def get_video_download(job_id: int, db: Session = Depends(get_db)):
         },
         "다운로드 URL 조회 성공"
     )
+
+
+# SVD 생성 영상 로컬 저장 경로
+def video_clip_local_path(job_id: int, scene_order: int):
+    return f"app/static/video_clips/{job_id}_{scene_order}.mp4"
+
+def subtitle_clip_local_path(job_id: int, scene_order: int):
+    return f"app/static/subtitle_clips/{job_id}_{scene_order}.mp4"
+
+def final_video_local_path(job_id: int):
+    return f"app/static/videos/{job_id}_svd.mp4"
+
+
+# SVD 영상 생성 API
+@router.post("/render/video/svd")
+def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    try:
+        job.status = "processing"
+        job.progress = 50
+        db.commit()
+
+        scene_map = {scene.scene_order: scene for scene in request.scenes}
+        subtitle_clip_paths = []
+
+        for img in sorted(request.images, key=lambda x: x.scene_order):
+            scene_order = img.scene_order
+            scene = scene_map.get(scene_order)
+
+            if not scene:
+                return error_response(400, "REQUEST_001", f"{scene_order}번 scene 정보가 없습니다.")
+
+            if not img.image_url:
+                return error_response(400, "REQUEST_001", f"{scene_order}번 image_url이 없습니다.")
+
+            # SVD 영상 생성
+            clip_path = video_clip_local_path(request.job_id, scene_order)
+
+            image_path = generated_image_local_path(request.job_id, scene_order)
+
+            generate_video_from_image(
+                image_path=image_path,
+                output_path=clip_path,
+            )
+
+            # 자막 합성
+            subtitle_clip_path = subtitle_clip_local_path(request.job_id, scene_order)
+            burn_subtitle_to_video(
+                input_path=clip_path,
+                output_path=subtitle_clip_path,
+                subtitle=scene.dialogue
+            )
+
+            subtitle_clip_paths.append(subtitle_clip_path)
+
+        job.progress = 85
+        db.commit()
+
+        # 영상 이어붙이기
+        output_path = final_video_local_path(request.job_id)
+        concat_video_clips(subtitle_clip_paths, output_path)
+
+        uploaded_video = upload_local_file_to_r2(
+            local_file_path=output_path,
+            folder="videos",
+            filename=f"{request.job_id}_svd.mp4",
+            content_type="video/mp4"
+        )
+
+        job.video_url = uploaded_video["url"]
+        job.status = "completed"
+        job.progress = 100
+
+        existing_video = db.query(Video).filter(Video.job_id == job.id).first()
+        if existing_video:
+            existing_video.user_id = job.user_id
+            existing_video.category_id = job.category_id
+            existing_video.title = job.title
+            existing_video.prompt = job.prompt
+            existing_video.thumbnail_url = job.thumbnail_url
+            existing_video.video_url = job.video_url
+        else:
+            db.add(Video(
+                job_id=job.id,
+                user_id=job.user_id,
+                category_id=job.category_id,
+                title=job.title,
+                prompt=job.prompt,
+                thumbnail_url=job.thumbnail_url,
+                video_url=job.video_url
+            ))
+
+        db.commit()
+
+        return success_response(
+            {
+                "job_id": request.job_id,
+                "status": job.status,
+                "video_url": job.video_url
+            },
+            "SVD 기반 영상 생성 성공"
+        )
+
+    except Exception as e:
+        job.status = "failed"
+        job.progress = 0
+        db.commit()
+        return error_response(500, "SERVER_001", str(e))
