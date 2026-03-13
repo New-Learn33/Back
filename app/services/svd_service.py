@@ -1,7 +1,10 @@
+# SVD 영상 생성
+
 import os
 import requests
 import replicate
 
+# 모델 : christophy/stable-video-diffusion
 MODEL_REF = "christophy/stable-video-diffusion:92a0c9a9cb1fd93ea0361d15e499dc879b35095077b2feed47315ccab4524036"
 
 def generate_video_from_image(image_path: str, output_path: str):

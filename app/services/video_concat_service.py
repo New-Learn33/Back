@@ -1,3 +1,5 @@
+# 여러 개 영상 → 하나로 합치기
+
 import os
 import subprocess
 import uuid

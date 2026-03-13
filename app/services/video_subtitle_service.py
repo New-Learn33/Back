@@ -64,7 +64,7 @@ def get_video_size(input_path: str):
     width, height = result.stdout.strip().split("x")
     return int(width), int(height)
 
-
+# 영상에 자막 합성
 def burn_subtitle_to_video(input_path: str, output_path: str, subtitle: str):
     if not os.path.exists(input_path):
         raise FileNotFoundError("입력 영상이 존재하지 않습니다.")

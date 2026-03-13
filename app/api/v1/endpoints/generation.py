@@ -747,6 +747,7 @@ def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = De
             if not img.image_url:
                 return error_response(400, "REQUEST_001", f"{scene_order}번 image_url이 없습니다.")
 
+            # SVD 영상 생성
             clip_path = video_clip_local_path(request.job_id, scene_order)
 
             image_path = generated_image_local_path(request.job_id, scene_order)
@@ -756,6 +757,7 @@ def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = De
                 output_path=clip_path,
             )
 
+            # 자막 합성
             subtitle_clip_path = subtitle_clip_local_path(request.job_id, scene_order)
             burn_subtitle_to_video(
                 input_path=clip_path,
@@ -768,6 +770,7 @@ def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = De
         job.progress = 85
         db.commit()
 
+        # 영상 이어붙이기
         output_path = final_video_local_path(request.job_id)
         concat_video_clips(subtitle_clip_paths, output_path)
 
