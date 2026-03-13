@@ -245,7 +245,7 @@
 import os
 import json
 from app.models.video import Video
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
@@ -254,31 +254,20 @@ from app.schemas.generation_schema import ThumbnailSelectRequest
 
 # from app.services.script_service import generate_three_cut_script
 # from app.services.image_service import generate_three_cut_images
-from app.services.image_service generate_single_image
+from app.services.image_service import generate_single_image
 from app.services.script_service import generate_six_cut_script
 from app.services.image_service import generate_six_cut_images
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
 
 from app.data.character_profiles_loader import pick_random_character
-from app.services.subtitle_render_service import render_subtitle_image
-from app.services.video_render_service import create_video_from_images
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
-from fastapi.responses import RedirectResponse
 
 from app.services.r2_service import upload_local_file_to_r2
-
-
-from app.utils.error_response import error_response
-from app.utils.success_response import success_response
-
-
-from app.schemas.generation_schema import GenerationRequest, GenerationResponse
-
 
 router = APIRouter()
 
@@ -356,7 +345,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": "6컷 생성 성공",
+        "message": f"{len(script_result['scenes'])}컷 생성 성공",
         "data": {
             "job_id": job_id,
             "title": script_result["title"],
@@ -400,7 +389,7 @@ def generate_content_stream(request: GenerationRequest, db: Session = Depends(ge
             # 1단계: 대사 생성
             yield f"data: {json.dumps({'type': 'step', 'step': 'script', 'message': 'AI가 대사를 생성하고 있습니다...'}, ensure_ascii=False)}\n\n"
 
-            script_result = generate_three_cut_script(req_copy)
+            script_result = generate_six_cut_script(req_copy)
 
             # DB에 job 저장
             from app.db.database import SessionLocal
@@ -427,10 +416,18 @@ def generate_content_stream(request: GenerationRequest, db: Session = Depends(ge
             # 대사 결과 전송
             yield f"data: {json.dumps({'type': 'script', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'scenes': script_result['scenes']}, ensure_ascii=False)}\n\n"
 
+
+            total_count = len(script_result["scenes"])
+
             # 2단계: 이미지 1장씩 생성하며 push
             uploaded_images = []
             for i, scene in enumerate(script_result["scenes"]):
-                yield f"data: {json.dumps({'type': 'step', 'step': f'image_{i+1}', 'message': f'{i+1}번째 이미지를 생성하고 있습니다... ({i+1}/3)'}, ensure_ascii=False)}\n\n"
+                step_data = {
+                    "type": "step",
+                    "step": f"image_{i+1}",
+                    "message": f"{i+1}번째 이미지를 생성하고 있습니다... ({i+1}/{total_count})",
+                }
+                yield f"data: {json.dumps(step_data, ensure_ascii=False)}\n\n"
 
                 img_result = generate_single_image(
                     job_id=job_id,
