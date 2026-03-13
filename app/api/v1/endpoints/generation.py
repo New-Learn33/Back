@@ -100,7 +100,7 @@
 
 #     return {
 #         "success": True,
-#         "message": "3컷 생성 성공",
+#         "message": "6컷 생성 성공",
 #         "data": {
 #             "job_id": job_id,
 #             "title": script_result["title"],
@@ -221,7 +221,7 @@
 
 #     return {
 #         "success": True,
-#         "message": "3컷 생성 성공",
+#         "message": "6컷 생성 성공",
 #         "data": {
 #             "job_id": job_id,
 #             "title": script_result["title"],
@@ -243,25 +243,34 @@
 #     }
 
 import os
+import json
+import asyncio
+import replicate
 from app.models.video import Video
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from typing import List
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
 from app.schemas.generation_schema import ThumbnailSelectRequest
 from app.services.script_service import generate_three_cut_script
-from app.services.image_service import generate_three_cut_images
+from app.services.image_service import generate_three_cut_images, save_b64_image_to_file, build_image_prompt
 from app.data.character_profiles_loader import pick_random_character
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 from sqlalchemy.orm import Session
-from app.db.database import get_db
+from app.db.database import get_db, SessionLocal
 from app.models.generation_job import GenerationJob
 from fastapi.responses import RedirectResponse
+from dotenv import load_dotenv
 
 from app.services.r2_service import upload_local_file_to_r2
+
+load_dotenv(override=True)
 
 
 # 네가 이미 쓰고 있는 모델이 있으면 유지
@@ -343,7 +352,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": "3컷 생성 성공",
+        "message": "6컷 생성 성공",
         "data": {
             "job_id": job_id,
             "title": script_result["title"],
@@ -591,3 +600,220 @@ def get_video_download(job_id: int, db: Session = Depends(get_db)):
         },
         "다운로드 URL 조회 성공"
     )
+
+
+# ──────────────────────────────────────
+# SSE 스트리밍 엔드포인트
+# ──────────────────────────────────────
+@router.post("/stream")
+async def generate_content_stream(request: Request):
+    body = await request.json()
+    category_id = body.get("category_id")
+    prompt_text = body.get("prompt", "")
+
+    from openai import OpenAI
+    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    def event(data: dict) -> str:
+        return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+    def generate():
+        db = SessionLocal()
+        try:
+            # 1) 캐릭터 선택
+            yield event({"type": "step", "step": "character", "message": "캐릭터를 선택하는 중..."})
+
+            selected_character = pick_random_character(category_id)
+            if not selected_character:
+                yield event({"type": "error", "message": "유효하지 않은 카테고리입니다."})
+                return
+
+            # 2) 대사 생성
+            yield event({"type": "step", "step": "script", "message": "대사를 생성하는 중..."})
+
+            from app.schemas.generation_schema import GenerationRequest as GenReq
+            req_obj = GenReq(category_id=category_id, prompt=prompt_text)
+            script_result = generate_three_cut_script(req_obj)
+
+            yield event({
+                "type": "script",
+                "title": script_result["title"],
+                "scenes": script_result["scenes"],
+            })
+
+            # 3) DB에 job 생성
+            job = GenerationJob(
+                user_id=1,
+                title=script_result["title"],
+                prompt=prompt_text,
+                category_id=category_id,
+                status="pending",
+                progress=0,
+            )
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+            job_id = job.id
+
+            yield event({"type": "step", "step": "image", "message": "이미지를 생성하는 중... (1/6)"})
+
+            # 4) 이미지 한 장씩 생성하며 스트리밍
+            uploaded_images = []
+            for i, scene in enumerate(script_result["scenes"]):
+                yield event({"type": "step", "step": "image", "message": f"이미지를 생성하는 중... ({i+1}/6)"})
+
+                img_prompt = build_image_prompt(selected_character, scene)
+
+                response = openai_client.images.generate(
+                    model="gpt-image-1",
+                    prompt=img_prompt,
+                    size="1024x1024",
+                    quality="medium",
+                )
+
+                if not response.data or not response.data[0].b64_json:
+                    yield event({"type": "error", "message": f"이미지 {i+1} 생성 실패"})
+                    return
+
+                filename = f"{job_id}_{scene['scene_order']}.png"
+                local_url = save_b64_image_to_file(response.data[0].b64_json, filename)
+
+                # R2 업로드
+                local_path = os.path.join("app", local_url.lstrip("/"))
+                uploaded = upload_local_file_to_r2(
+                    local_file_path=local_path,
+                    folder="generated",
+                    filename=filename,
+                    content_type="image/png",
+                )
+
+                uploaded_images.append({
+                    "scene_order": scene["scene_order"],
+                    "image_url": uploaded["url"],
+                })
+
+                yield event({
+                    "type": "image",
+                    "scene_order": scene["scene_order"],
+                    "image_url": uploaded["url"],
+                })
+
+            # 5) 완료
+            job.status = "processing"
+            job.progress = 30
+            db.commit()
+
+            yield event({
+                "type": "done",
+                "job_id": job_id,
+                "title": script_result["title"],
+                "category_id": category_id,
+                "selected_template_image": {
+                    "id": selected_character["id"],
+                    "name": selected_character["name"],
+                    "image_url": selected_character["image_url"],
+                },
+                "scenes": script_result["scenes"],
+                "images": uploaded_images,
+            })
+
+        except Exception as e:
+            yield event({"type": "error", "message": str(e)})
+        finally:
+            db.close()
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+# ──────────────────────────────────────
+# SVD 기반 영상 생성 엔드포인트
+# ──────────────────────────────────────
+class SvdImageItem(BaseModel):
+    scene_order: int
+    image_url: str
+
+class SvdSceneItem(BaseModel):
+    scene_order: int
+    dialogue: str
+
+class SvdRenderRequest(BaseModel):
+    job_id: int
+    images: List[SvdImageItem]
+    scenes: List[SvdSceneItem]
+
+
+@router.post("/render/video/svd")
+def render_video_svd(request: SvdRenderRequest, db: Session = Depends(get_db)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    try:
+        job.status = "processing"
+        job.progress = 50
+        db.commit()
+
+        replicate_api_token = os.getenv("REPLICATE_API_TOKEN")
+        if not replicate_api_token:
+            return error_response(500, "SERVER_001", "REPLICATE_API_TOKEN이 설정되지 않았습니다.")
+
+        os.environ["REPLICATE_API_TOKEN"] = replicate_api_token
+
+        # 첫 번째 이미지로 SVD 영상 생성
+        sorted_images = sorted(request.images, key=lambda x: x.scene_order)
+        first_image_url = sorted_images[0].image_url
+
+        # Replicate SVD 모델 실행
+        output = replicate.run(
+            "stability-ai/stable-video-diffusion:3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438",
+            input={
+                "input_image": first_image_url,
+                "video_length": "25_frames_with_svd_xt",
+                "sizing_strategy": "maintain_aspect_ratio",
+                "frames_per_second": 6,
+                "motion_bucket_id": 127,
+                "cond_aug": 0.02,
+                "decoding_t": 7,
+                "seed": 0,
+            },
+        )
+
+        # output은 FileOutput URL
+        video_url = str(output)
+
+        job.video_url = video_url
+        job.status = "completed"
+        job.progress = 100
+
+        # Video 레코드 생성/업데이트
+        existing_video = db.query(Video).filter(Video.job_id == job.id).first()
+        if existing_video:
+            existing_video.video_url = video_url
+        else:
+            new_video = Video(
+                job_id=job.id,
+                user_id=job.user_id,
+                category_id=job.category_id,
+                title=job.title,
+                prompt=job.prompt,
+                thumbnail_url=job.thumbnail_url,
+                video_url=video_url,
+            )
+            db.add(new_video)
+
+        db.commit()
+
+        return success_response(
+            {
+                "job_id": request.job_id,
+                "status": "completed",
+                "video_url": video_url,
+            },
+            "SVD 영상 생성 성공",
+        )
+
+    except Exception as e:
+        job.status = "failed"
+        job.progress = 0
+        db.commit()
+        return error_response(500, "SERVER_001", f"SVD 영상 생성 실패: {str(e)}")
