@@ -35,7 +35,7 @@ class GenerationData(BaseModel):
 
 class GenerationResponse(BaseModel):
     success: bool = True
-    message: str = "3컷 생성 성공"
+    message: str = "6컷 생성 성공"
     data: GenerationData
 
 
