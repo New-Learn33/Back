@@ -243,29 +243,31 @@
 #     }
 
 import os
+import json
 from app.models.video import Video
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from app.schemas.generation_schema import GenerationRequest, GenerationResponse
 from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
 from app.schemas.generation_schema import ThumbnailSelectRequest
-from app.services.script_service import generate_three_cut_script
-from app.services.image_service import generate_three_cut_images
-from app.data.character_profiles_loader import pick_random_character
+
+# from app.services.script_service import generate_three_cut_script
+# from app.services.image_service import generate_three_cut_images
+from app.services.image_service import generate_single_image
+from app.services.script_service import generate_six_cut_script
+from app.services.image_service import generate_six_cut_images
 from app.services.subtitle_render_service import render_subtitle_image
 from app.services.video_render_service import create_video_from_images
+
+from app.data.character_profiles_loader import pick_random_character
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
-from fastapi.responses import RedirectResponse
 
 from app.services.r2_service import upload_local_file_to_r2
-
-
-# 네가 이미 쓰고 있는 모델이 있으면 유지
-# from app.models.generation_job import GenerationJob
 
 router = APIRouter()
 
@@ -294,7 +296,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
             detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
         )
 
-    script_result = generate_three_cut_script(request)
+    script_result = generate_six_cut_script(request)
 
     job = GenerationJob(
         user_id=1,  # 테스트용
@@ -313,7 +315,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
     # DB 저장 안 쓰면 임시 job_id
     # job_id = random.randint(100000, 999999)
 
-    image_results = generate_three_cut_images(
+    image_results = generate_six_cut_images(
         job_id=job_id,
         character_profile=selected_character,
         scenes=script_result["scenes"],
@@ -343,7 +345,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": "3컷 생성 성공",
+        "message": f"{len(script_result['scenes'])}컷 생성 성공",
         "data": {
             "job_id": job_id,
             "title": script_result["title"],
@@ -357,6 +359,117 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
             "images": uploaded_images
         },
     }
+
+
+# SSE 스트리밍 생성 API - 이미지가 1장씩 생성될 때마다 프론트로 push
+@router.post("/stream")
+def generate_content_stream(request: GenerationRequest, db: Session = Depends(get_db)):
+    # 제너레이터 밖에서 미리 값 추출 (제너레이터 안에서 request 접근 시 문제 방지)
+    category_id = request.category_id
+    prompt_text = request.prompt
+
+    selected_character = pick_random_character(category_id)
+
+    if not selected_character:
+        raise HTTPException(
+            status_code=400,
+            detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
+        )
+
+    # request 데이터를 단순 객체로 복사
+    class SimpleRequest:
+        def __init__(self, category_id, prompt):
+            self.category_id = category_id
+            self.prompt = prompt
+
+    req_copy = SimpleRequest(category_id, prompt_text)
+
+    def event_stream():
+        try:
+            # 1단계: 대사 생성
+            yield f"data: {json.dumps({'type': 'step', 'step': 'script', 'message': 'AI가 대사를 생성하고 있습니다...'}, ensure_ascii=False)}\n\n"
+
+            script_result = generate_six_cut_script(req_copy)
+
+            # DB에 job 저장
+            from app.db.database import SessionLocal
+            db_session = SessionLocal()
+            try:
+                job = GenerationJob(
+                    user_id=1,
+                    title=script_result["title"],
+                    prompt=prompt_text,
+                    category_id=category_id,
+                    status="pending",
+                    progress=0
+                )
+                db_session.add(job)
+                db_session.commit()
+                db_session.refresh(job)
+                job_id = job.id
+            except Exception:
+                db_session.rollback()
+                raise
+            finally:
+                db_session.close()
+
+            # 대사 결과 전송
+            yield f"data: {json.dumps({'type': 'script', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'scenes': script_result['scenes']}, ensure_ascii=False)}\n\n"
+
+
+            total_count = len(script_result["scenes"])
+
+            # 2단계: 이미지 1장씩 생성하며 push
+            uploaded_images = []
+            for i, scene in enumerate(script_result["scenes"]):
+                step_data = {
+                    "type": "step",
+                    "step": f"image_{i+1}",
+                    "message": f"{i+1}번째 이미지를 생성하고 있습니다... ({i+1}/{total_count})",
+                }
+                yield f"data: {json.dumps(step_data, ensure_ascii=False)}\n\n"
+
+                img_result = generate_single_image(
+                    job_id=job_id,
+                    character_profile=selected_character,
+                    scene=scene,
+                )
+
+                # R2 업로드
+                local_path = local_url_to_file_path(img_result["image_url"])
+                uploaded = upload_local_file_to_r2(
+                    local_file_path=local_path,
+                    folder="generated",
+                    filename=f"{job_id}_{scene['scene_order']}.png",
+                    content_type="image/png"
+                )
+
+                image_data = {
+                    "scene_order": scene["scene_order"],
+                    "image_url": uploaded["url"],
+                }
+                uploaded_images.append(image_data)
+
+                # 이미지 1장 완성 → 프론트에 즉시 push
+                yield f"data: {json.dumps({'type': 'image', 'scene_order': scene['scene_order'], 'image_url': uploaded['url']}, ensure_ascii=False)}\n\n"
+
+            # 완료
+            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']}, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 # 자막 합성 API
@@ -423,7 +536,6 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
 # 영상 생성 API
 @router.post("/render/video")
 def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
-
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
