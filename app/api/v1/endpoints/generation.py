@@ -327,16 +327,21 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
         scene_order = img["scene_order"]
         local_path = local_url_to_file_path(img["image_url"])
 
-        uploaded = upload_local_file_to_r2(
-            local_file_path=local_path,
-            folder="generated",
-            filename=f"{job_id}_{scene_order}.png",
-            content_type="image/png"
-        )
+        try:
+            uploaded = upload_local_file_to_r2(
+                local_file_path=local_path,
+                folder="generated",
+                filename=f"{job_id}_{scene_order}.png",
+                content_type="image/png"
+            )
+            final_url = uploaded["url"]
+        except Exception as r2_err:
+            print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+            final_url = img["image_url"]
 
         uploaded_images.append({
             "scene_order": scene_order,
-            "image_url": uploaded["url"],
+            "image_url": final_url,
         })
 
     job.status = "processing"
@@ -435,23 +440,28 @@ def generate_content_stream(request: GenerationRequest, db: Session = Depends(ge
                     scene=scene,
                 )
 
-                # R2 업로드
+                # R2 업로드 (실패 시 로컬 URL 폴백)
                 local_path = local_url_to_file_path(img_result["image_url"])
-                uploaded = upload_local_file_to_r2(
-                    local_file_path=local_path,
-                    folder="generated",
-                    filename=f"{job_id}_{scene['scene_order']}.png",
-                    content_type="image/png"
-                )
+                try:
+                    uploaded = upload_local_file_to_r2(
+                        local_file_path=local_path,
+                        folder="generated",
+                        filename=f"{job_id}_{scene['scene_order']}.png",
+                        content_type="image/png"
+                    )
+                    final_url = uploaded["url"]
+                except Exception as r2_err:
+                    print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+                    final_url = img_result["image_url"]
 
                 image_data = {
                     "scene_order": scene["scene_order"],
-                    "image_url": uploaded["url"],
+                    "image_url": final_url,
                 }
                 uploaded_images.append(image_data)
 
                 # 이미지 1장 완성 → 프론트에 즉시 push
-                yield f"data: {json.dumps({'type': 'image', 'scene_order': scene['scene_order'], 'image_url': uploaded['url']}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'image', 'scene_order': scene['scene_order'], 'image_url': final_url}, ensure_ascii=False)}\n\n"
 
             # 완료
             yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']}, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
