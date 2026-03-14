@@ -274,6 +274,10 @@ from app.services.video_subtitle_service import burn_subtitle_to_video
 from app.services.video_concat_service import concat_video_clips
 from app.schemas.generation_schema import StabilityRenderVideoRequest
 
+from app.api.v1.endpoints.auth import get_current_user
+from app.models.user import User
+from fastapi.responses import JSONResponse
+
 
 router = APIRouter()
 
@@ -293,7 +297,13 @@ def video_local_path(job_id: int):
 
 
 @router.post("", response_model=GenerationResponse)
-def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
+def generate_content(
+    request: GenerationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
     selected_character = pick_random_character(request.category_id)
 
     if not selected_character:
@@ -305,7 +315,7 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
     script_result = generate_six_cut_script(request)
 
     job = GenerationJob(
-        user_id=1,  # 테스트용
+        user_id=current_user.id,
         title=script_result["title"],
         prompt=request.prompt,
         category_id=request.category_id,
@@ -374,7 +384,13 @@ def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
 
 # SSE 스트리밍 생성 API - 이미지가 1장씩 생성될 때마다 프론트로 push
 @router.post("/stream")
-def generate_content_stream(request: GenerationRequest, db: Session = Depends(get_db)):
+def generate_content_stream(
+    request: GenerationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
     # 제너레이터 밖에서 미리 값 추출 (제너레이터 안에서 request 접근 시 문제 방지)
     category_id = request.category_id
     prompt_text = request.prompt
@@ -407,7 +423,7 @@ def generate_content_stream(request: GenerationRequest, db: Session = Depends(ge
             db_session = SessionLocal()
             try:
                 job = GenerationJob(
-                    user_id=1,
+                    user_id=current_user.id,
                     title=script_result["title"],
                     prompt=prompt_text,
                     category_id=category_id,
@@ -490,10 +506,20 @@ def generate_content_stream(request: GenerationRequest, db: Session = Depends(ge
 
 # 자막 합성 API
 @router.post("/render/subtitles")
-def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_db)):
+def render_subtitles(
+    request: RenderSubtitleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
     try:
         scene_map = {scene.scene_order: scene for scene in request.scenes}
@@ -551,10 +577,20 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
 
 # 영상 생성 API
 @router.post("/render/video")
-def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
+def render_video(
+    request: RenderVideoRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
     try:
         job.status = "processing"
@@ -626,12 +662,21 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
 
 # 썸네일 선택 (사진 중에 선택) API
 @router.post("/thumbnail/select")
-def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_db)):
-    try:
+def select_thumbnail(
+    request: ThumbnailSelectRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
 
+    try:
         job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
         if not job:
             return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+        if job.user_id != current_user.id:
+            return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
         job.thumbnail_url = request.thumbnail_url
 
@@ -655,11 +700,21 @@ def select_thumbnail(request: ThumbnailSelectRequest, db: Session = Depends(get_
 
 # 영상 생성 상태 조회 API
 @router.get("/jobs/{job_id}")
-def get_generation_status(job_id: int, db: Session = Depends(get_db)):
+def get_generation_status(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
 
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
     return success_response(
         {
@@ -673,11 +728,21 @@ def get_generation_status(job_id: int, db: Session = Depends(get_db)):
 
 # 영상 생성 결과 조회 API
 @router.get("/jobs/{job_id}/result")
-def get_generation_result(job_id: int, db: Session = Depends(get_db)):
+def get_generation_result(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
 
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
     # 아직 생성 중이면 막음
     if job.status != "completed":
@@ -699,11 +764,21 @@ def get_generation_result(job_id: int, db: Session = Depends(get_db)):
 
 # 영상 다운로드 API
 @router.get("/jobs/{job_id}/download")
-def get_video_download(job_id: int, db: Session = Depends(get_db)):
+def get_video_download(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
 
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
     if job.status != "completed":
         return error_response(
@@ -734,10 +809,20 @@ def final_video_local_path(job_id: int):
 
 # SVD 영상 생성 API
 @router.post("/render/video/svd")
-def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = Depends(get_db)):
+def render_video_with_svd(
+    request: StabilityRenderVideoRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
 
     try:
         job.status = "processing"
