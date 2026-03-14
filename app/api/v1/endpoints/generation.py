@@ -768,7 +768,15 @@ def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = De
             # SVD 영상 생성
             clip_path = video_clip_local_path(request.job_id, scene_order)
 
+            # 로컬 파일이 있으면 사용, 없으면 R2 URL에서 다운로드
             image_path = generated_image_local_path(request.job_id, scene_order)
+            if not os.path.exists(image_path) and img.image_url.startswith("http"):
+                import requests as req
+                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+                dl = req.get(img.image_url)
+                dl.raise_for_status()
+                with open(image_path, "wb") as f:
+                    f.write(dl.content)
 
             generate_video_from_image(
                 image_path=image_path,
