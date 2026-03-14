@@ -6,6 +6,9 @@ R2_PUBLIC_BASE_URL = os.getenv("R2_PUBLIC_BASE_URL")
 
 
 def upload_local_file_to_r2(local_file_path: str, folder: str, filename: str, content_type: str):
+    if not R2_PUBLIC_BASE_URL or not R2_BUCKET_NAME:
+        raise Exception("R2 환경변수(R2_PUBLIC_BASE_URL, R2_BUCKET_NAME)가 설정되지 않았습니다.")
+
     s3 = get_r2_client()
     object_key = f"{folder}/{filename}"
 
