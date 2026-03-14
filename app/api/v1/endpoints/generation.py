@@ -514,16 +514,21 @@ def render_subtitles(request: RenderSubtitleRequest, db: Session = Depends(get_d
                 scene.dialogue
             )
 
-            uploaded = upload_local_file_to_r2(
-                local_file_path=output_path,
-                folder="rendered",
-                filename=f"{request.job_id}_{img.scene_order}.png",
-                content_type="image/png"
-            )
+            try:
+                uploaded = upload_local_file_to_r2(
+                    local_file_path=output_path,
+                    folder="rendered",
+                    filename=f"{request.job_id}_{img.scene_order}.png",
+                    content_type="image/png"
+                )
+                final_url = uploaded["url"]
+            except Exception as r2_err:
+                print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+                final_url = f"/static/rendered/{request.job_id}_{img.scene_order}.png"
 
             results.append({
                 "scene_order": img.scene_order,
-                "image_url": uploaded["url"]
+                "image_url": final_url
             })
 
         job.status = "processing"
@@ -571,14 +576,17 @@ def render_video(request: RenderVideoRequest, db: Session = Depends(get_db)):
 
         create_video_from_images(image_paths, output_path)
 
-        uploaded_video = upload_local_file_to_r2(
-            local_file_path=output_path,
-            folder="videos",
-            filename=f"{request.job_id}.mp4",
-            content_type="video/mp4"
-        )
-
-        video_url = uploaded_video["url"]
+        try:
+            uploaded_video = upload_local_file_to_r2(
+                local_file_path=output_path,
+                folder="videos",
+                filename=f"{request.job_id}.mp4",
+                content_type="video/mp4"
+            )
+            video_url = uploaded_video["url"]
+        except Exception as r2_err:
+            print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+            video_url = f"/static/videos/{request.job_id}.mp4"
 
         job.video_url = video_url
 
