@@ -105,12 +105,23 @@ def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
         prompt = build_image_prompt(character_profile, scene)
 
         try:
-            response = client.images.generate(
-                model="gpt-image-1",
-                prompt=prompt,
-                size="1024x1024",
-                quality="medium",
-            )
+            current_prompt = prompt
+            for attempt in range(2):
+                try:
+                    response = client.images.generate(
+                        model="gpt-image-1",
+                        prompt=current_prompt,
+                        size="1024x1024",
+                        quality="medium",
+                    )
+                    break
+                except Exception as e:
+                    if ("moderation_blocked" in str(e) or "safety" in str(e).lower()) and attempt == 0:
+                        current_prompt = f"""Create a safe, family-friendly cartoon illustration.
+Scene: {scene.get('subtitle_text', 'A character in a simple scene')}
+Style: Clean webtoon style, fully clothed character, no text, no speech bubbles, safe for all ages."""
+                        continue
+                    raise
 
             if not response.data or not response.data[0].b64_json:
                 raise HTTPException(status_code=500, detail="이미지 생성 응답이 비어 있습니다.")
@@ -122,7 +133,7 @@ def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
                 {
                     "scene_order": scene["scene_order"],
                     "image_url": image_url,
-                    "prompt_used": prompt,
+                    "prompt_used": current_prompt,
                 }
             )
 
@@ -135,19 +146,33 @@ def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
 
 
 def generate_single_image(job_id: int, character_profile: dict, scene: dict):
-    """이미지 1장만 생성 (SSE 스트리밍용)"""
+    """이미지 1장만 생성 (SSE 스트리밍용). 모더레이션 차단 시 안전한 프롬프트로 재시도."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise Exception("OPENAI_API_KEY가 설정되지 않았습니다.")
 
     prompt = build_image_prompt(character_profile, scene)
 
-    response = client.images.generate(
-        model="gpt-image-1",
-        prompt=prompt,
-        size="1024x1024",
-        quality="medium",
-    )
+    for attempt in range(2):
+        try:
+            response = client.images.generate(
+                model="gpt-image-1",
+                prompt=prompt,
+                size="1024x1024",
+                quality="medium",
+            )
+            break
+        except Exception as e:
+            if "moderation_blocked" in str(e) or "safety" in str(e).lower():
+                if attempt == 0:
+                    # 안전한 프롬프트로 재시도
+                    prompt = f"""Create a safe, family-friendly cartoon illustration.
+Scene: {scene.get('subtitle_text', 'A character in a simple scene')}
+Style: Clean webtoon style, fully clothed character, no text, no speech bubbles, safe for all ages."""
+                    continue
+                else:
+                    raise Exception("이미지 생성이 안전 정책에 의해 차단되었습니다. 다른 프롬프트를 시도해주세요.")
+            raise
 
     if not response.data or not response.data[0].b64_json:
         raise Exception("이미지 생성 응답이 비어 있습니다.")
