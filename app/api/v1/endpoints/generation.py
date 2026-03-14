@@ -268,10 +268,6 @@ from app.db.database import get_db
 from app.models.generation_job import GenerationJob
 
 from app.services.r2_service import upload_local_file_to_r2
-
-from app.services.svd_service import generate_video_from_image
-from app.services.video_subtitle_service import burn_subtitle_to_video
-from app.services.video_concat_service import concat_video_clips
 from app.schemas.generation_schema import StabilityRenderVideoRequest
 
 
@@ -743,6 +739,10 @@ def final_video_local_path(job_id: int):
 # SVD 영상 생성 API
 @router.post("/render/video/svd")
 def render_video_with_svd(request: StabilityRenderVideoRequest, db: Session = Depends(get_db)):
+    from app.services.svd_service import generate_video_from_image
+    from app.services.video_subtitle_service import burn_subtitle_to_video
+    from app.services.video_concat_service import concat_video_clips
+
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
         return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")

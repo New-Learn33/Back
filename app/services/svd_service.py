@@ -2,7 +2,6 @@
 
 import os
 import requests
-import replicate
 
 # 모델 : christophy/stable-video-diffusion
 MODEL_REF = "christophy/stable-video-diffusion:92a0c9a9cb1fd93ea0361d15e499dc879b35095077b2feed47315ccab4524036"
@@ -15,6 +14,7 @@ def generate_video_from_image(image_path: str, output_path: str):
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"입력 이미지가 없습니다: {image_path}")
 
+    import replicate
     client = replicate.Client(api_token=token)
 
     with open(image_path, "rb") as image_file:
