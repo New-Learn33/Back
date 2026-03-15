@@ -300,12 +300,12 @@ def generate_content(
 ):
     if isinstance(current_user, JSONResponse):
         return current_user
-    selected_character = pick_random_character(request.category_id)
+    selected_character = pick_random_character(request.category_id, current_user.id, db)
 
     if not selected_character:
         raise HTTPException(
             status_code=400,
-            detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
+            detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
         )
 
     script_result = generate_six_cut_script(request)
@@ -391,12 +391,12 @@ def generate_content_stream(
     category_id = request.category_id
     prompt_text = request.prompt
 
-    selected_character = pick_random_character(category_id)
+    selected_character = pick_random_character(category_id, current_user.id, db)
 
     if not selected_character:
         raise HTTPException(
             status_code=400,
-            detail="유효하지 않은 category_id 이거나 해당 카테고리에 캐릭터가 없습니다."
+            detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
         )
 
     # request 데이터를 단순 객체로 복사
