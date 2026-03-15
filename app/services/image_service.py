@@ -29,10 +29,12 @@ def build_character_anchor(character_profile: dict) -> str:
     outfit = character_profile.get("outfit", {})
     style_keywords = character_profile.get("style_keywords", [])
     forbidden_changes = character_profile.get("forbidden_changes", [])
+    custom_tags = character_profile.get("custom_tags", [])
 
     accessories = ", ".join(outfit.get("accessories", []))
     style_text = ", ".join(style_keywords)
     forbidden_text = ", ".join(forbidden_changes)
+    custom_tags_text = ", ".join(custom_tags) if custom_tags else ""
 
     gender = character_profile.get("gender", "ambiguous")
     hair = appearance.get("hair", "")
@@ -55,6 +57,7 @@ Fixed character identity:
 - shoes: {shoes}
 - accessories: {accessories}
 - style keywords: {style_text}
+{f"- user-defined character traits: {custom_tags_text}" if custom_tags_text else ""}
 
 Consistency rules:
 - same exact character identity in all 6 scenes
