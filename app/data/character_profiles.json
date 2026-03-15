@@ -456,6 +456,40 @@
         "remove sunglasses",
         "replace leather jacket"
       ]
+    },
+    {
+      "id": "ani_test_kitty_eedc62dc",
+      "name": "test_kitty",
+      "image_url": "/static/templates/ani/kt_1d4d8cee.png",
+      "category_hint": "anime style",
+      "character_name": "test_kitty",
+      "gender": "ambiguous",
+      "appearance": {
+        "hair": "none (cat ears present)",
+        "eyes": "simple oval shapes, one eye winking",
+        "skin": "white fur",
+        "body_type": "small, round, cartoonish"
+      },
+      "outfit": {
+        "top": "white shirt with pink sleeves and collar",
+        "bottom": "pink plaid skirt with heart decorations",
+        "shoes": "white, simple",
+        "accessories": [
+          "red bow with pink ribbon and yellow star with 'k'"
+        ]
+      },
+      "style_keywords": [
+        "anime style",
+        "cute",
+        "kawaii",
+        "cartoonish",
+        "simple lines"
+      ],
+      "forbidden_changes": [
+        "no realistic features",
+        "no changing basic body shape",
+        "no removing bow accessory"
+      ]
     }
   ],
   "2": [
