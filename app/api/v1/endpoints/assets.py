@@ -1,12 +1,21 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import List
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.api.v1.endpoints.auth import get_current_user
 from app.models.user import User
-from app.services.asset_library_service import create_asset_profile, get_asset_profiles, delete_asset_profile
+from app.models.asset import Asset
+from app.services.asset_library_service import (
+    create_asset_profile, get_asset_profiles, delete_asset_profile, asset_to_dict
+)
 
 router = APIRouter()
+
+
+class UpdateTagsRequest(BaseModel):
+    tags: List[str]
 
 
 @router.post("/upload")
@@ -47,6 +56,7 @@ async def upload_asset(
 @router.get("")
 def list_assets(
     category_id: int | None = None,
+    tag: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -56,6 +66,13 @@ def list_assets(
     try:
         result = get_asset_profiles(db=db, user_id=current_user.id, category_id=category_id)
 
+        # 태그 필터링
+        if tag:
+            result = [
+                a for a in result
+                if tag in (a.get("custom_tags") or []) or tag in (a.get("style_keywords") or [])
+            ]
+
         return {
             "success": True,
             "message": "에셋 목록 조회 성공",
@@ -63,6 +80,31 @@ def list_assets(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"에셋 조회 중 오류 발생: {str(e)}")
+
+
+@router.patch("/{asset_id}/tags")
+def update_asset_tags(
+    asset_id: str,
+    request: UpdateTagsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    asset = db.query(Asset).filter(Asset.id == asset_id, Asset.user_id == current_user.id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="에셋을 찾을 수 없습니다.")
+
+    asset.custom_tags = request.tags
+    db.commit()
+    db.refresh(asset)
+
+    return {
+        "success": True,
+        "message": "태그 수정 성공",
+        "data": asset_to_dict(asset),
+    }
 
 
 @router.delete("/{asset_id}")

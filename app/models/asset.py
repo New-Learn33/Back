@@ -21,5 +21,6 @@ class Asset(Base):
     outfit = Column(JSON, nullable=True)
     style_keywords = Column(JSON, nullable=True)
     forbidden_changes = Column(JSON, nullable=True)
+    custom_tags = Column(JSON, nullable=True)  # 사용자 정의 태그 ["주인공", "검사"]
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

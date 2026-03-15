@@ -205,6 +205,7 @@ def asset_to_dict(asset: Asset) -> dict:
         "outfit": asset.outfit,
         "style_keywords": asset.style_keywords,
         "forbidden_changes": asset.forbidden_changes,
+        "custom_tags": asset.custom_tags or [],
     }
 
 
