@@ -3,11 +3,12 @@ import json
 import base64
 import re
 import uuid
-from typing import Dict, List
+from typing import List
 from dotenv import load_dotenv
 from openai import OpenAI
+from sqlalchemy.orm import Session
 
-from app.data.character_profiles_loader import load_character_profiles
+from app.models.asset import Asset
 
 load_dotenv()
 
@@ -16,8 +17,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # app/
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 TEMPLATES_DIR = os.path.join(STATIC_DIR, "templates")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-PROFILE_PATH = os.path.join(DATA_DIR, "character_profiles.json")
 
 CATEGORY_ID_TO_FOLDER = {
     1: "ani",
@@ -37,7 +36,6 @@ ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
 def ensure_dirs():
-    os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(TEMPLATES_DIR, exist_ok=True)
     for folder in CATEGORY_ID_TO_FOLDER.values():
         os.makedirs(os.path.join(TEMPLATES_DIR, folder), exist_ok=True)
@@ -152,21 +150,11 @@ Rules:
         "gender": parsed.get("gender", "ambiguous"),
         "appearance": parsed.get(
             "appearance",
-            {
-                "hair": "",
-                "eyes": "",
-                "skin": "",
-                "body_type": "",
-            },
+            {"hair": "", "eyes": "", "skin": "", "body_type": ""},
         ),
         "outfit": parsed.get(
             "outfit",
-            {
-                "top": "",
-                "bottom": "",
-                "shoes": "",
-                "accessories": [],
-            },
+            {"top": "", "bottom": "", "shoes": "", "accessories": []},
         ),
         "style_keywords": parsed.get("style_keywords", []),
         "forbidden_changes": parsed.get(
@@ -203,26 +191,31 @@ def save_uploaded_file(file_bytes: bytes, original_filename: str, category_id: i
     return save_path, image_url
 
 
-def append_profile_to_json(category_id: int, profile: dict) -> None:
-    ensure_dirs()
-
-    if os.path.exists(PROFILE_PATH):
-        with open(PROFILE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    else:
-        data = {"1": [], "2": [], "3": [], "4": []}
-
-    key = str(category_id)
-    if key not in data:
-        data[key] = []
-
-    data[key].append(profile)
-
-    with open(PROFILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+def asset_to_dict(asset: Asset) -> dict:
+    """Asset DB 모델을 dict로 변환"""
+    return {
+        "id": asset.id,
+        "name": asset.name,
+        "image_url": asset.image_url,
+        "category_id": str(asset.category_id),
+        "category_hint": asset.category_hint,
+        "character_name": asset.character_name,
+        "gender": asset.gender,
+        "appearance": asset.appearance,
+        "outfit": asset.outfit,
+        "style_keywords": asset.style_keywords,
+        "forbidden_changes": asset.forbidden_changes,
+    }
 
 
-def create_asset_profile(file_bytes: bytes, original_filename: str, category_id: int, asset_name: str | None = None) -> dict:
+def create_asset_profile(
+    db: Session,
+    user_id: int,
+    file_bytes: bytes,
+    original_filename: str,
+    category_id: int,
+    asset_name: str | None = None,
+) -> dict:
     if category_id not in CATEGORY_ID_TO_FOLDER:
         raise ValueError("유효하지 않은 category_id 입니다.")
 
@@ -238,50 +231,51 @@ def create_asset_profile(file_bytes: bytes, original_filename: str, category_id:
         image_url=image_url,
     )
 
-    append_profile_to_json(category_id, profile)
-    load_character_profiles(force_reload=True)
+    # DB에 저장
+    asset = Asset(
+        id=profile["id"],
+        user_id=user_id,
+        category_id=category_id,
+        name=profile["name"],
+        image_url=profile["image_url"],
+        category_hint=profile["category_hint"],
+        character_name=profile["character_name"],
+        gender=profile["gender"],
+        appearance=profile["appearance"],
+        outfit=profile["outfit"],
+        style_keywords=profile["style_keywords"],
+        forbidden_changes=profile["forbidden_changes"],
+    )
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
 
-    return profile
+    return asset_to_dict(asset)
 
 
-def delete_asset_profile(asset_id: str) -> bool:
-    """에셋 프로필과 이미지 파일을 삭제합니다."""
-    if not os.path.exists(PROFILE_PATH):
+def delete_asset_profile(db: Session, asset_id: str, user_id: int) -> bool:
+    """에셋 프로필과 이미지 파일을 삭제합니다. 본인 에셋만 삭제 가능."""
+    asset = db.query(Asset).filter(Asset.id == asset_id, Asset.user_id == user_id).first()
+    if not asset:
         return False
 
-    with open(PROFILE_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    # 이미지 파일 삭제
+    image_url = asset.image_url or ""
+    if image_url.startswith("/static/"):
+        image_path = os.path.join(BASE_DIR, image_url.lstrip("/"))
+        if os.path.exists(image_path):
+            os.remove(image_path)
 
-    found = False
-    for category_key in data:
-        for i, profile in enumerate(data[category_key]):
-            if profile.get("id") == asset_id:
-                # 이미지 파일 삭제
-                image_url = profile.get("image_url", "")
-                if image_url.startswith("/static/"):
-                    image_path = os.path.join(BASE_DIR, image_url.lstrip("/"))
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
-
-                # JSON에서 제거
-                data[category_key].pop(i)
-                found = True
-                break
-        if found:
-            break
-
-    if not found:
-        return False
-
-    with open(PROFILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    load_character_profiles(force_reload=True)
+    db.delete(asset)
+    db.commit()
     return True
 
 
-def get_asset_profiles(category_id: int | None = None) -> Dict[str, List[dict]] | List[dict]:
-    profiles = load_character_profiles(force_reload=True)
-    if category_id is None:
-        return profiles
-    return profiles.get(str(category_id), [])
+def get_asset_profiles(db: Session, user_id: int, category_id: int | None = None) -> List[dict]:
+    """유저의 에셋 목록 조회"""
+    query = db.query(Asset).filter(Asset.user_id == user_id)
+    if category_id is not None:
+        query = query.filter(Asset.category_id == category_id)
+
+    assets = query.order_by(Asset.created_at.desc()).all()
+    return [asset_to_dict(a) for a in assets]

@@ -32,5 +32,6 @@ def init_db():
     import app.models.video_like
     import app.models.comment
     import app.models.preset
+    import app.models.asset
 
     Base.metadata.create_all(bind=engine)
