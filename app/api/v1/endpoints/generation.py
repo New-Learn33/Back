@@ -268,10 +268,6 @@ from app.db.database import get_db
 from app.models.generation_job import GenerationJob
 
 from app.services.r2_service import upload_local_file_to_r2
-
-from app.services.svd_service import generate_video_from_image
-from app.services.video_subtitle_service import burn_subtitle_to_video
-from app.services.video_concat_service import concat_video_clips
 from app.schemas.generation_schema import StabilityRenderVideoRequest
 
 from app.api.v1.endpoints.auth import get_current_user
@@ -814,7 +810,6 @@ def subtitle_clip_local_path(job_id: int, scene_order: int):
 def final_video_local_path(job_id: int):
     return f"app/static/videos/{job_id}_svd.mp4"
 
-
 # SVD 영상 생성 API
 @router.post("/render/video/svd")
 def render_video_with_svd(
@@ -822,8 +817,13 @@ def render_video_with_svd(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    from app.services.svd_service import generate_video_from_image
+    from app.services.video_subtitle_service import burn_subtitle_to_video
+    from app.services.video_concat_service import concat_video_clips
+
     if isinstance(current_user, JSONResponse):
         return current_user
+
 
     job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
     if not job:
@@ -853,7 +853,15 @@ def render_video_with_svd(
             # SVD 영상 생성
             clip_path = video_clip_local_path(request.job_id, scene_order)
 
+            # 로컬 파일이 있으면 사용, 없으면 R2 URL에서 다운로드
             image_path = generated_image_local_path(request.job_id, scene_order)
+            if not os.path.exists(image_path) and img.image_url.startswith("http"):
+                import requests as req
+                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+                dl = req.get(img.image_url)
+                dl.raise_for_status()
+                with open(image_path, "wb") as f:
+                    f.write(dl.content)
 
             generate_video_from_image(
                 image_path=image_path,
