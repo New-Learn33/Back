@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from app.services.asset_library_service import create_asset_profile, get_asset_profiles
+from app.services.asset_library_service import create_asset_profile, get_asset_profiles, delete_asset_profile
 
 router = APIRouter()
 
@@ -43,3 +43,20 @@ def list_assets(category_id: int | None = None):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"에셋 조회 중 오류 발생: {str(e)}")
+
+
+@router.delete("/{asset_id}")
+def delete_asset(asset_id: str):
+    try:
+        deleted = delete_asset_profile(asset_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="에셋을 찾을 수 없습니다.")
+        return {
+            "success": True,
+            "message": "에셋 삭제 성공",
+            "data": {"id": asset_id},
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"에셋 삭제 중 오류 발생: {str(e)}")

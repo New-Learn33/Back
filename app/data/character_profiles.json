@@ -326,38 +326,6 @@
       ]
     },
     {
-      "id": "ani_ani_6",
-      "name": "ani_6",
-      "image_url": "/static/templates/ani/ani (6).jpg",
-      "category_hint": "anime style",
-      "character_name": "ani_6",
-      "gender": "male",
-      "appearance": {
-        "hair": "spiky black hair",
-        "eyes": "sharp dark eyes",
-        "skin": "light skin tone",
-        "body_type": "lean muscular"
-      },
-      "outfit": {
-        "top": "white open-front robe",
-        "bottom": "purple rope belt with dark pants",
-        "shoes": "not visible",
-        "accessories": [
-          "katana sword"
-        ]
-      },
-      "style_keywords": [
-        "anime style",
-        "shonen",
-        "dynamic pose"
-      ],
-      "forbidden_changes": [
-        "no change to eye color",
-        "no change to hair style",
-        "no change to outfit colors"
-      ]
-    },
-    {
       "id": "ani_ani_7",
       "name": "ani_7",
       "image_url": "/static/templates/ani/ani (7).jpg",

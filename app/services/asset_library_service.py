@@ -244,6 +244,42 @@ def create_asset_profile(file_bytes: bytes, original_filename: str, category_id:
     return profile
 
 
+def delete_asset_profile(asset_id: str) -> bool:
+    """에셋 프로필과 이미지 파일을 삭제합니다."""
+    if not os.path.exists(PROFILE_PATH):
+        return False
+
+    with open(PROFILE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    found = False
+    for category_key in data:
+        for i, profile in enumerate(data[category_key]):
+            if profile.get("id") == asset_id:
+                # 이미지 파일 삭제
+                image_url = profile.get("image_url", "")
+                if image_url.startswith("/static/"):
+                    image_path = os.path.join(BASE_DIR, image_url.lstrip("/"))
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+
+                # JSON에서 제거
+                data[category_key].pop(i)
+                found = True
+                break
+        if found:
+            break
+
+    if not found:
+        return False
+
+    with open(PROFILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    load_character_profiles(force_reload=True)
+    return True
+
+
 def get_asset_profiles(category_id: int | None = None) -> Dict[str, List[dict]] | List[dict]:
     profiles = load_character_profiles(force_reload=True)
     if category_id is None:
