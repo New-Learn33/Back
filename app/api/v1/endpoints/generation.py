@@ -301,12 +301,7 @@ def generate_content(
     if isinstance(current_user, JSONResponse):
         return current_user
     selected_character = pick_random_character(request.category_id, current_user.id, db)
-
-    if not selected_character:
-        raise HTTPException(
-            status_code=400,
-            detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
-        )
+    # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
     script_result = generate_six_cut_script(request, genre=request.genre)
 
@@ -373,7 +368,7 @@ def generate_content(
                 "id": selected_character["id"],
                 "name": selected_character["name"],
                 "image_url": selected_character["image_url"],
-            },
+            } if selected_character else None,
             "scenes": script_result["scenes"],
             "images": uploaded_images
         },
@@ -397,12 +392,7 @@ def generate_content_stream(
     image_quality = request.image_quality
 
     selected_character = pick_random_character(category_id, current_user.id, db)
-
-    if not selected_character:
-        raise HTTPException(
-            status_code=400,
-            detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
-        )
+    # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
     # request 데이터를 단순 객체로 복사
     class SimpleRequest:
@@ -489,7 +479,8 @@ def generate_content_stream(
                 yield f"data: {json.dumps({'type': 'image', 'scene_order': scene['scene_order'], 'image_url': final_url}, ensure_ascii=False)}\n\n"
 
             # 완료
-            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']}, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
+            template_image = {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']} if selected_character else None
+            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': template_image, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
 
         except Exception as e:
             import traceback
