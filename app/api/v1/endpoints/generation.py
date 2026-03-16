@@ -268,7 +268,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
 
-from app.services.r2_service import upload_local_file_to_r2
+from app.services.r2_service import upload_local_file_to_r2, add_storage_used
 from app.schemas.generation_schema import StabilityRenderVideoRequest
 
 from app.api.v1.endpoints.auth import get_current_user
@@ -332,6 +332,7 @@ def generate_content(
     )
 
     uploaded_images = []
+    total_uploaded_size = 0
 
     for img in image_results:
         scene_order = img["scene_order"]
@@ -345,6 +346,7 @@ def generate_content(
                 content_type="image/png"
             )
             final_url = uploaded["url"]
+            total_uploaded_size += uploaded.get("size", 0)
         except Exception as r2_err:
             print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
             final_url = img["image_url"]
@@ -353,6 +355,10 @@ def generate_content(
             "scene_order": scene_order,
             "image_url": final_url,
         })
+
+    # storage_used 업데이트
+    if total_uploaded_size > 0:
+        add_storage_used(db, current_user.id, total_uploaded_size)
 
     job.status = "processing"
     job.progress = 30
@@ -440,6 +446,7 @@ def generate_content_stream(
 
             # 2단계: 이미지 1장씩 생성하며 push
             uploaded_images = []
+            stream_upload_size = 0
             for i, scene in enumerate(script_result["scenes"]):
                 step_data = {
                     "type": "step",
@@ -466,6 +473,7 @@ def generate_content_stream(
                         content_type="image/png"
                     )
                     final_url = uploaded["url"]
+                    stream_upload_size += uploaded.get("size", 0)
                 except Exception as r2_err:
                     print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
                     final_url = img_result["image_url"]
@@ -478,6 +486,22 @@ def generate_content_stream(
 
                 # 이미지 1장 완성 → 프론트에 즉시 push
                 yield f"data: {json.dumps({'type': 'image', 'scene_order': scene['scene_order'], 'image_url': final_url}, ensure_ascii=False)}\n\n"
+
+            # storage_used 업데이트
+            if stream_upload_size > 0:
+                try:
+                    from app.db.database import SessionLocal as _SL
+                    _db = _SL()
+                    try:
+                        from app.models.user import User as _U
+                        _user = _db.query(_U).filter(_U.id == current_user.id).first()
+                        if _user:
+                            _user.storage_used = (_user.storage_used or 0) + stream_upload_size
+                            _db.commit()
+                    finally:
+                        _db.close()
+                except Exception:
+                    pass
 
             # 완료
             template_image = {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']} if selected_character else None
@@ -519,6 +543,7 @@ def render_subtitles(
     try:
         scene_map = {scene.scene_order: scene for scene in request.scenes}
         results = []
+        render_total_size = 0
 
         for img in request.images:
             scene = scene_map.get(img.scene_order)
@@ -543,6 +568,7 @@ def render_subtitles(
                     content_type="image/png"
                 )
                 final_url = uploaded["url"]
+                render_total_size += uploaded.get("size", 0)
             except Exception as r2_err:
                 print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
                 final_url = f"/static/rendered/{request.job_id}_{img.scene_order}.png"
@@ -551,6 +577,9 @@ def render_subtitles(
                 "scene_order": img.scene_order,
                 "image_url": final_url
             })
+
+        if render_total_size > 0:
+            add_storage_used(db, current_user.id, render_total_size)
 
         job.status = "processing"
         job.progress = 60
@@ -615,6 +644,7 @@ def render_video(
                 content_type="video/mp4"
             )
             video_url = uploaded_video["url"]
+            add_storage_used(db, current_user.id, uploaded_video.get("size", 0))
         except Exception as r2_err:
             print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
             video_url = f"/static/videos/{request.job_id}.mp4"
@@ -901,6 +931,7 @@ def render_video_with_svd(
             filename=f"{request.job_id}_svd.mp4",
             content_type="video/mp4"
         )
+        add_storage_used(db, current_user.id, uploaded_video.get("size", 0))
 
         job.video_url = uploaded_video["url"]
 
