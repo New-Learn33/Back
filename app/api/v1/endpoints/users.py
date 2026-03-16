@@ -164,6 +164,7 @@ def get_my_storage(current_user: User = Depends(get_current_user)):
         data={
             "storage_used": used,
             "storage_limit": STORAGE_LIMIT_BYTES,
+            "storage_used_mb": round(used / (1024 ** 2), 1),
             "storage_used_gb": round(used / (1024 ** 3), 2),
             "storage_limit_gb": round(STORAGE_LIMIT_BYTES / (1024 ** 3), 1),
         },
