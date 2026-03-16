@@ -12,6 +12,7 @@ from app.schemas.user import (
     UserProfileUpdateRequest,
     UserVideoListResponse,
 )
+from app.models.user import STORAGE_LIMIT_BYTES
 from app.services.comment_service import list_comments_by_user
 from app.services.video_service import list_liked_videos_by_user, list_videos_by_user
 from app.utils.error_response import error_response
@@ -38,7 +39,7 @@ def serialize_user_video(video) -> dict:
         "video_url": video.video_url,
         "like_count": video.like_count,
         "comment_count": video.comment_count,
-        "view_count": 0,
+        "view_count": getattr(video, 'view_count', 0) or 0,
     }
 
 
@@ -150,4 +151,21 @@ def get_my_liked_videos(
     return success_response(
         data={"videos": [serialize_user_video(video) for video in videos]},
         message="내 좋아요 영상 조회 성공",
+    )
+
+
+@router.get("/me/storage")
+def get_my_storage(current_user: User = Depends(get_current_user)):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    used = current_user.storage_used or 0
+    return success_response(
+        data={
+            "storage_used": used,
+            "storage_limit": STORAGE_LIMIT_BYTES,
+            "storage_used_gb": round(used / (1024 ** 3), 2),
+            "storage_limit_gb": round(STORAGE_LIMIT_BYTES / (1024 ** 3), 1),
+        },
+        message="저장공간 조회 성공",
     )

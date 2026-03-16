@@ -39,12 +39,18 @@ def init_db():
     # 기존 테이블에 누락된 컬럼 자동 추가
     _migrate_missing_columns()
 
+    # 기존 에셋 file_size 및 storage_used 동기화
+    _sync_storage_usage()
+
 
 def _migrate_missing_columns():
     """create_all은 새 컬럼을 추가하지 않으므로 수동으로 ALTER TABLE 실행"""
     insp = inspect(engine)
     migrations = [
         ("assets", "custom_tags", "JSON NULL"),
+        ("assets", "file_size", "BIGINT NOT NULL DEFAULT 0"),
+        ("videos", "view_count", "INT NOT NULL DEFAULT 0"),
+        ("users", "storage_used", "BIGINT NOT NULL DEFAULT 0"),
     ]
     for table, column, col_type in migrations:
         if table in insp.get_table_names():
@@ -53,3 +59,44 @@ def _migrate_missing_columns():
                 with engine.begin() as conn:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
                     print(f"[migrate] Added column {table}.{column}")
+
+
+def _sync_storage_usage():
+    """기존 에셋의 file_size가 0인 것들을 실제 파일 크기로 업데이트하고, storage_used 재계산"""
+    from app.models.asset import Asset
+    from app.models.user import User
+
+    db = SessionLocal()
+    try:
+        # 1) file_size가 0인 에셋들 실제 파일 크기로 업데이트
+        zero_assets = db.query(Asset).filter(Asset.file_size == 0).all()
+        if zero_assets:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            for asset in zero_assets:
+                image_url = asset.image_url or ""
+                if image_url.startswith("/static/"):
+                    file_path = os.path.join(base_dir, "app", image_url.lstrip("/"))
+                    if os.path.exists(file_path):
+                        asset.file_size = os.path.getsize(file_path)
+            db.commit()
+            print(f"[sync] Updated file_size for {len(zero_assets)} assets")
+
+        # 2) 유저별 storage_used 재계산
+        from sqlalchemy import func as sqlfunc
+        user_storage = (
+            db.query(Asset.user_id, sqlfunc.sum(Asset.file_size))
+            .group_by(Asset.user_id)
+            .all()
+        )
+        for user_id, total in user_storage:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                user.storage_used = total or 0
+        db.commit()
+        if user_storage:
+            print(f"[sync] Recalculated storage_used for {len(user_storage)} users")
+    except Exception as e:
+        db.rollback()
+        print(f"[sync] Storage sync error: {e}")
+    finally:
+        db.close()

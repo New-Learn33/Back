@@ -244,6 +244,7 @@
 
 import os
 import json
+import random as _random
 from app.models.video import Video
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -267,7 +268,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
 
-from app.services.r2_service import upload_local_file_to_r2
+from app.services.r2_service import upload_local_file_to_r2, add_storage_used
 from app.schemas.generation_schema import StabilityRenderVideoRequest
 
 from app.api.v1.endpoints.auth import get_current_user
@@ -301,12 +302,7 @@ def generate_content(
     if isinstance(current_user, JSONResponse):
         return current_user
     selected_character = pick_random_character(request.category_id, current_user.id, db)
-
-    if not selected_character:
-        raise HTTPException(
-            status_code=400,
-            detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
-        )
+    # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
     script_result = generate_six_cut_script(request, genre=request.genre)
 
@@ -336,6 +332,7 @@ def generate_content(
     )
 
     uploaded_images = []
+    total_uploaded_size = 0
 
     for img in image_results:
         scene_order = img["scene_order"]
@@ -349,6 +346,7 @@ def generate_content(
                 content_type="image/png"
             )
             final_url = uploaded["url"]
+            total_uploaded_size += uploaded.get("size", 0)
         except Exception as r2_err:
             print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
             final_url = img["image_url"]
@@ -357,6 +355,10 @@ def generate_content(
             "scene_order": scene_order,
             "image_url": final_url,
         })
+
+    # storage_used 업데이트
+    if total_uploaded_size > 0:
+        add_storage_used(db, current_user.id, total_uploaded_size)
 
     job.status = "processing"
     job.progress = 30
@@ -373,7 +375,7 @@ def generate_content(
                 "id": selected_character["id"],
                 "name": selected_character["name"],
                 "image_url": selected_character["image_url"],
-            },
+            } if selected_character else None,
             "scenes": script_result["scenes"],
             "images": uploaded_images
         },
@@ -397,12 +399,7 @@ def generate_content_stream(
     image_quality = request.image_quality
 
     selected_character = pick_random_character(category_id, current_user.id, db)
-
-    if not selected_character:
-        raise HTTPException(
-            status_code=400,
-            detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
-        )
+    # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
     # request 데이터를 단순 객체로 복사
     class SimpleRequest:
@@ -449,6 +446,7 @@ def generate_content_stream(
 
             # 2단계: 이미지 1장씩 생성하며 push
             uploaded_images = []
+            stream_upload_size = 0
             for i, scene in enumerate(script_result["scenes"]):
                 step_data = {
                     "type": "step",
@@ -475,6 +473,7 @@ def generate_content_stream(
                         content_type="image/png"
                     )
                     final_url = uploaded["url"]
+                    stream_upload_size += uploaded.get("size", 0)
                 except Exception as r2_err:
                     print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
                     final_url = img_result["image_url"]
@@ -488,8 +487,25 @@ def generate_content_stream(
                 # 이미지 1장 완성 → 프론트에 즉시 push
                 yield f"data: {json.dumps({'type': 'image', 'scene_order': scene['scene_order'], 'image_url': final_url}, ensure_ascii=False)}\n\n"
 
+            # storage_used 업데이트
+            if stream_upload_size > 0:
+                try:
+                    from app.db.database import SessionLocal as _SL
+                    _db = _SL()
+                    try:
+                        from app.models.user import User as _U
+                        _user = _db.query(_U).filter(_U.id == current_user.id).first()
+                        if _user:
+                            _user.storage_used = (_user.storage_used or 0) + stream_upload_size
+                            _db.commit()
+                    finally:
+                        _db.close()
+                except Exception:
+                    pass
+
             # 완료
-            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']}, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
+            template_image = {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']} if selected_character else None
+            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': template_image, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
 
         except Exception as e:
             import traceback
@@ -527,6 +543,7 @@ def render_subtitles(
     try:
         scene_map = {scene.scene_order: scene for scene in request.scenes}
         results = []
+        render_total_size = 0
 
         for img in request.images:
             scene = scene_map.get(img.scene_order)
@@ -551,6 +568,7 @@ def render_subtitles(
                     content_type="image/png"
                 )
                 final_url = uploaded["url"]
+                render_total_size += uploaded.get("size", 0)
             except Exception as r2_err:
                 print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
                 final_url = f"/static/rendered/{request.job_id}_{img.scene_order}.png"
@@ -559,6 +577,9 @@ def render_subtitles(
                 "scene_order": img.scene_order,
                 "image_url": final_url
             })
+
+        if render_total_size > 0:
+            add_storage_used(db, current_user.id, render_total_size)
 
         job.status = "processing"
         job.progress = 60
@@ -623,11 +644,22 @@ def render_video(
                 content_type="video/mp4"
             )
             video_url = uploaded_video["url"]
+            add_storage_used(db, current_user.id, uploaded_video.get("size", 0))
         except Exception as r2_err:
             print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
             video_url = f"/static/videos/{request.job_id}.mp4"
 
         job.video_url = video_url
+
+        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정
+        if not job.thumbnail_url and request.subtitle_images:
+            random_img = _random.choice(request.subtitle_images)
+            auto_thumbnail = f"/static/rendered/{request.job_id}_{random_img.scene_order}.png"
+            # R2에 업로드된 이미지 URL 패턴으로 시도
+            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+            if r2_base:
+                auto_thumbnail = f"{r2_base}/rendered/{request.job_id}_{random_img.scene_order}.png"
+            job.thumbnail_url = auto_thumbnail
 
         job.status = "completed"
         job.progress = 100
@@ -899,8 +931,19 @@ def render_video_with_svd(
             filename=f"{request.job_id}_svd.mp4",
             content_type="video/mp4"
         )
+        add_storage_used(db, current_user.id, uploaded_video.get("size", 0))
 
         job.video_url = uploaded_video["url"]
+
+        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정
+        if not job.thumbnail_url and request.scenes:
+            random_scene = _random.choice(request.scenes)
+            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+            if r2_base:
+                job.thumbnail_url = f"{r2_base}/rendered/{request.job_id}_{random_scene.scene_order}.png"
+            else:
+                job.thumbnail_url = f"/static/rendered/{request.job_id}_{random_scene.scene_order}.png"
+
         job.status = "completed"
         job.progress = 100
 

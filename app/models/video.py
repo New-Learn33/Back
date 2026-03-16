@@ -18,6 +18,7 @@ class Video(Base):
     thumbnail_url = Column(String(500), nullable=True)
     video_url = Column(String(500), nullable=False)
 
+    view_count = Column(Integer, default=0, nullable=False)
     like_count = Column(Integer, default=0, nullable=False)
     comment_count = Column(Integer, default=0, nullable=False)
 
