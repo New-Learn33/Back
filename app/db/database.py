@@ -68,8 +68,9 @@ def _sync_storage_usage():
 
     db = SessionLocal()
     try:
-        # 1) file_size가 0인 에셋들 실제 파일 크기로 업데이트
+        # 1) file_size가 0인 에셋들 실제 파일 크기로 업데이트 (로컬 파일이 있을 때만)
         zero_assets = db.query(Asset).filter(Asset.file_size == 0).all()
+        updated_count = 0
         if zero_assets:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             for asset in zero_assets:
@@ -78,13 +79,16 @@ def _sync_storage_usage():
                     file_path = os.path.join(base_dir, "app", image_url.lstrip("/"))
                     if os.path.exists(file_path):
                         asset.file_size = os.path.getsize(file_path)
+                        updated_count += 1
             db.commit()
-            print(f"[sync] Updated file_size for {len(zero_assets)} assets")
+            if updated_count:
+                print(f"[sync] Updated file_size for {updated_count}/{len(zero_assets)} assets")
 
-        # 2) 유저별 storage_used 재계산
+        # 2) 유저별 storage_used 재계산 (file_size > 0인 에셋만 합산)
         from sqlalchemy import func as sqlfunc
         user_storage = (
             db.query(Asset.user_id, sqlfunc.sum(Asset.file_size))
+            .filter(Asset.file_size > 0)
             .group_by(Asset.user_id)
             .all()
         )
