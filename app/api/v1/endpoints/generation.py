@@ -275,6 +275,9 @@ from app.api.v1.endpoints.auth import get_current_user
 from app.models.user import User
 from fastapi.responses import JSONResponse
 
+from app.schemas.generation_schema import GenerationTextUpdateRequest
+from app.models.generation_scene import GenerationScene
+
 
 router = APIRouter()
 
@@ -322,6 +325,18 @@ def generate_content(
 
     # DB 저장 안 쓰면 임시 job_id
     # job_id = random.randint(100000, 999999)
+
+    # scenes DB 저장
+    for scene in script_result["scenes"]:
+        db.add(
+            GenerationScene(
+                job_id=job_id,
+                scene_order=scene["scene_order"],
+                dialogue=scene.get("dialogue"),
+                subtitle_text=scene.get("subtitle_text")
+            )
+        )
+    db.commit()
 
     image_results = generate_six_cut_images(
         job_id=job_id,
@@ -432,6 +447,18 @@ def generate_content_stream(
                 db_session.commit()
                 db_session.refresh(job)
                 job_id = job.id
+
+                for scene in script_result["scenes"]:
+                    db_session.add(
+                        GenerationScene(
+                            job_id=job_id,
+                            scene_order=scene["scene_order"],
+                            dialogue=scene.get("dialogue"),
+                            subtitle_text=scene.get("subtitle_text")
+                        )
+                    )
+                db_session.commit()
+
             except Exception:
                 db_session.rollback()
                 raise
@@ -981,4 +1008,79 @@ def render_video_with_svd(
         job.status = "failed"
         job.progress = 0
         db.commit()
+        return error_response(500, "SERVER_001", str(e))
+    
+
+# 수정 API
+@router.patch("/jobs/{job_id}/text")
+def update_generation_text(
+    job_id: int,
+    request: GenerationTextUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    if request.title is None and not request.scenes:
+        return error_response(400, "REQUEST_001", "수정할 title 또는 scenes 값이 필요합니다.")
+
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
+
+    try:
+        # title 수정
+        if request.title is not None:
+            job.title = request.title
+
+        # scenes 수정
+        if request.scenes:
+            for scene_req in request.scenes:
+                scene = db.query(GenerationScene).filter(
+                    GenerationScene.job_id == job_id,
+                    GenerationScene.scene_order == scene_req.scene_order
+                ).first()
+
+                if not scene:
+                    return error_response(
+                        404,
+                        "REQUEST_007",
+                        f"{scene_req.scene_order}번 scene을 찾을 수 없습니다."
+                    )
+
+                if scene_req.dialogue is not None:
+                    scene.dialogue = scene_req.dialogue
+
+                if scene_req.subtitle_text is not None:
+                    scene.subtitle_text = scene_req.subtitle_text
+
+        db.commit()
+        db.refresh(job)
+
+        updated_scenes = db.query(GenerationScene).filter(
+            GenerationScene.job_id == job_id
+        ).order_by(GenerationScene.scene_order.asc()).all()
+
+        return success_response(
+            {
+                "job_id": job.id,
+                "title": job.title,
+                "scenes": [
+                    {
+                        "scene_order": scene.scene_order,
+                        "dialogue": scene.dialogue,
+                        "subtitle_text": scene.subtitle_text
+                    }
+                    for scene in updated_scenes
+                ]
+            },
+            "텍스트 수정 성공"
+        )
+
+    except Exception as e:
+        db.rollback()
         return error_response(500, "SERVER_001", str(e))
