@@ -11,6 +11,10 @@ class SceneScriptItem(BaseModel):
 class GenerationRequest(BaseModel):
     category_id: int = Field(..., example=1)
     prompt: str = Field(..., example="세상이 멸망하는데 히어로가 늦잠을 잤다")
+    art_style: str = Field(default="webtoon", example="webtoon")
+    genre: str = Field(default="auto", example="comedy")
+    image_quality: str = Field(default="medium", example="medium")
+    motion_intensity: str = Field(default="medium", example="medium")
 
 
 class ImageResultItem(BaseModel):
@@ -88,3 +92,4 @@ class StabilityRenderVideoRequest(BaseModel):
     job_id: int
     images: List[StabilitySceneImageItem]
     scenes: List[StabilitySceneDialogueItem]
+    motion_intensity: str = Field(default="medium", example="medium")

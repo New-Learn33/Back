@@ -8,6 +8,15 @@ load_dotenv(override=True)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+GENRE_HINTS = {
+    "auto": "",
+    "comedy": "The tone should be humorous and lighthearted. Include witty dialogue and funny situations.",
+    "action": "The tone should be intense and dynamic. Include dramatic moments and high-energy scenes.",
+    "romance": "The tone should be warm and emotional. Include tender moments and heartfelt dialogue.",
+    "horror": "The tone should be suspenseful and eerie. Include tension-building moments and mysterious atmosphere.",
+    "emotional": "The tone should be deeply moving and sentimental. Include poignant moments that touch the heart.",
+}
+
 
 def validate_script_result(data: dict):
     if "title" not in data:
@@ -32,12 +41,15 @@ def validate_script_result(data: dict):
             raise HTTPException(status_code=500, detail="scene에 subtitle_text가 없습니다.")
 
 
-def generate_six_cut_script(request):
+def generate_six_cut_script(request, genre: str = "auto"):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
 
-    system_prompt = """
+    genre_hint = GENRE_HINTS.get(genre, "")
+    genre_rule = f"\n- Tone and mood: {genre_hint}" if genre_hint else ""
+
+    system_prompt = f"""
 You are a screenplay writer for a 6-cut webtoon style comic.
 
 Return ONLY valid JSON.
@@ -45,41 +57,41 @@ Do not include markdown fences.
 Do not include explanations.
 
 JSON schema:
-{
+{{
   "title": "string",
   "scenes": [
-    {
+    {{
       "scene_order": 1,
       "dialogue": "string",
       "subtitle_text": "string"
-    },
-    {
+    }},
+    {{
       "scene_order": 2,
       "dialogue": "string",
       "subtitle_text": "string"
-    },
-    {
+    }},
+    {{
       "scene_order": 3,
       "dialogue": "string",
       "subtitle_text": "string"
-    },
-    {
+    }},
+    {{
       "scene_order": 4,
       "dialogue": "string",
       "subtitle_text": "string"
-    },
-    {
+    }},
+    {{
       "scene_order": 5,
       "dialogue": "string",
       "subtitle_text": "string"
-    },
-    {
+    }},
+    {{
       "scene_order": 6,
       "dialogue": "string",
       "subtitle_text": "string"
-    }
+    }}
   ]
-}
+}}
 
 Rules:
 - Make exactly 6 scenes.
@@ -87,7 +99,7 @@ Rules:
 - subtitle_text should describe only situation, action, and emotion.
 - Do NOT define or change appearance such as gender, hairstyle, outfit, accessories, body type, or colors.
 - Character visual identity is managed separately by the system.
-- Keep each scene visually distinct in action/emotion, but not in character identity.
+- Keep each scene visually distinct in action/emotion, but not in character identity.{genre_rule}
 """
 
     user_prompt = f"""
