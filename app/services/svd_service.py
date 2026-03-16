@@ -6,7 +6,14 @@ import requests
 # 모델 : christophy/stable-video-diffusion
 MODEL_REF = "christophy/stable-video-diffusion:92a0c9a9cb1fd93ea0361d15e499dc879b35095077b2feed47315ccab4524036"
 
-def generate_video_from_image(image_path: str, output_path: str):
+MOTION_MAP = {
+    "low": 40,
+    "medium": 127,
+    "high": 200,
+}
+
+
+def generate_video_from_image(image_path: str, output_path: str, motion_intensity: str = "medium"):
     token = os.getenv("REPLICATE_API_TOKEN")
     if not token:
         raise ValueError("REPLICATE_API_TOKEN이 없습니다.")
@@ -17,6 +24,8 @@ def generate_video_from_image(image_path: str, output_path: str):
     import replicate
     client = replicate.Client(api_token=token)
 
+    motion_id = MOTION_MAP.get(motion_intensity, 127)
+
     with open(image_path, "rb") as image_file:
         output = client.run(
             MODEL_REF,
@@ -25,7 +34,7 @@ def generate_video_from_image(image_path: str, output_path: str):
                 "video_length": "14_frames_with_svd",
                 "sizing_strategy": "maintain_aspect_ratio",
                 "frames_per_second": 6,
-                "motion_bucket_id": 127,
+                "motion_bucket_id": motion_id,
                 "cond_aug": 0.02,
                 "decoding_t": 14,
             },
