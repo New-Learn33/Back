@@ -244,6 +244,7 @@
 
 import os
 import json
+import random as _random
 from app.models.video import Video
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -620,6 +621,16 @@ def render_video(
 
         job.video_url = video_url
 
+        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정
+        if not job.thumbnail_url and request.subtitle_images:
+            random_img = _random.choice(request.subtitle_images)
+            auto_thumbnail = f"/static/rendered/{request.job_id}_{random_img.scene_order}.png"
+            # R2에 업로드된 이미지 URL 패턴으로 시도
+            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+            if r2_base:
+                auto_thumbnail = f"{r2_base}/rendered/{request.job_id}_{random_img.scene_order}.png"
+            job.thumbnail_url = auto_thumbnail
+
         job.status = "completed"
         job.progress = 100
 
@@ -892,6 +903,16 @@ def render_video_with_svd(
         )
 
         job.video_url = uploaded_video["url"]
+
+        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정
+        if not job.thumbnail_url and request.scenes:
+            random_scene = _random.choice(request.scenes)
+            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+            if r2_base:
+                job.thumbnail_url = f"{r2_base}/rendered/{request.job_id}_{random_scene.scene_order}.png"
+            else:
+                job.thumbnail_url = f"/static/rendered/{request.job_id}_{random_scene.scene_order}.png"
+
         job.status = "completed"
         job.progress = 100
 
