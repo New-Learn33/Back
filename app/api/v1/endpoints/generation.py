@@ -308,7 +308,7 @@ def generate_content(
             detail="유효하지 않은 category_id 이거나 해당 카테고리에 에셋이 없습니다. 에셋 라이브러리에서 캐릭터를 먼저 업로드해주세요."
         )
 
-    script_result = generate_six_cut_script(request)
+    script_result = generate_six_cut_script(request, genre=request.genre)
 
     job = GenerationJob(
         user_id=current_user.id,
@@ -331,6 +331,8 @@ def generate_content(
         job_id=job_id,
         character_profile=selected_character,
         scenes=script_result["scenes"],
+        art_style=request.art_style,
+        image_quality=request.image_quality,
     )
 
     uploaded_images = []
@@ -390,6 +392,9 @@ def generate_content_stream(
     # 제너레이터 밖에서 미리 값 추출 (제너레이터 안에서 request 접근 시 문제 방지)
     category_id = request.category_id
     prompt_text = request.prompt
+    art_style = request.art_style
+    genre = request.genre
+    image_quality = request.image_quality
 
     selected_character = pick_random_character(category_id, current_user.id, db)
 
@@ -412,7 +417,7 @@ def generate_content_stream(
             # 1단계: 대사 생성
             yield f"data: {json.dumps({'type': 'step', 'step': 'script', 'message': 'AI가 대사를 생성하고 있습니다...'}, ensure_ascii=False)}\n\n"
 
-            script_result = generate_six_cut_script(req_copy)
+            script_result = generate_six_cut_script(req_copy, genre=genre)
 
             # DB에 job 저장
             from app.db.database import SessionLocal
@@ -456,6 +461,8 @@ def generate_content_stream(
                     job_id=job_id,
                     character_profile=selected_character,
                     scene=scene,
+                    art_style=art_style,
+                    image_quality=image_quality,
                 )
 
                 # R2 업로드 (실패 시 로컬 URL 폴백)
@@ -866,6 +873,7 @@ def render_video_with_svd(
             generate_video_from_image(
                 image_path=image_path,
                 output_path=clip_path,
+                motion_intensity=request.motion_intensity,
             )
 
             # 자막 합성

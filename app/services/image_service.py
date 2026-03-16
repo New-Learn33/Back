@@ -14,6 +14,15 @@ GENERATED_DIR = os.path.join(STATIC_DIR, "generated")
 
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
+ART_STYLE_MAP = {
+    "webtoon": "webtoon style illustration, clean lines, flat colors",
+    "anime": "japanese anime style, detailed shading, vibrant colors",
+    "watercolor": "watercolor painting style, soft edges, pastel tones",
+    "3d_render": "3D rendered character, Pixar-like quality, detailed lighting",
+    "pixel": "pixel art style, retro game aesthetic, 16-bit",
+    "realistic": "photorealistic digital art, cinematic lighting, detailed textures",
+}
+
 
 def save_b64_image_to_file(b64_data: str, filename: str) -> str:
     file_path = os.path.join(GENERATED_DIR, filename)
@@ -73,8 +82,9 @@ Consistency rules:
     return anchor_prompt.strip()
 
 
-def build_image_prompt(character_profile: dict, scene: dict) -> str:
+def build_image_prompt(character_profile: dict, scene: dict, art_style: str = "webtoon") -> str:
     character_anchor = build_character_anchor(character_profile)
+    style_desc = ART_STYLE_MAP.get(art_style, ART_STYLE_MAP["webtoon"])
 
     scene_prompt = f"""
 Scene instructions:
@@ -83,7 +93,7 @@ Scene instructions:
 - emotional tone: {scene["dialogue"]}
 
 Image style rules:
-- webtoon style illustration
+- {style_desc}
 - cinematic composition
 - character-focused scene
 - no text
@@ -97,7 +107,7 @@ Image style rules:
     return f"{character_anchor}\n\n{scene_prompt}".strip()
 
 
-def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
+def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list, art_style: str = "webtoon", image_quality: str = "medium"):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -105,7 +115,7 @@ def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
     results = []
 
     for scene in scenes:
-        prompt = build_image_prompt(character_profile, scene)
+        prompt = build_image_prompt(character_profile, scene, art_style)
 
         try:
             current_prompt = prompt
@@ -115,7 +125,7 @@ def generate_six_cut_images(job_id: int, character_profile: dict, scenes: list):
                         model="gpt-image-1",
                         prompt=current_prompt,
                         size="1024x1024",
-                        quality="medium",
+                        quality=image_quality,
                     )
                     break
                 except Exception as e:
@@ -148,13 +158,13 @@ Style: Clean webtoon style, fully clothed character, no text, no speech bubbles,
     return results
 
 
-def generate_single_image(job_id: int, character_profile: dict, scene: dict):
+def generate_single_image(job_id: int, character_profile: dict, scene: dict, art_style: str = "webtoon", image_quality: str = "medium"):
     """이미지 1장만 생성 (SSE 스트리밍용). 모더레이션 차단 시 안전한 프롬프트로 재시도."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise Exception("OPENAI_API_KEY가 설정되지 않았습니다.")
 
-    prompt = build_image_prompt(character_profile, scene)
+    prompt = build_image_prompt(character_profile, scene, art_style)
 
     for attempt in range(2):
         try:
@@ -162,7 +172,7 @@ def generate_single_image(job_id: int, character_profile: dict, scene: dict):
                 model="gpt-image-1",
                 prompt=prompt,
                 size="1024x1024",
-                quality="medium",
+                quality=image_quality,
             )
             break
         except Exception as e:
