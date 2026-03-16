@@ -22,5 +22,6 @@ class Asset(Base):
     style_keywords = Column(JSON, nullable=True)
     forbidden_changes = Column(JSON, nullable=True)
     custom_tags = Column(JSON, nullable=True)  # 사용자 정의 태그 ["주인공", "검사"]
+    file_size = Column(BigInteger, default=0, nullable=False)  # bytes
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -246,6 +246,7 @@ def create_asset_profile(
         outfit=profile["outfit"],
         style_keywords=profile["style_keywords"],
         forbidden_changes=profile["forbidden_changes"],
+        file_size=len(file_bytes),
     )
     db.add(asset)
     db.commit()
@@ -256,9 +257,13 @@ def create_asset_profile(
 
 def delete_asset_profile(db: Session, asset_id: str, user_id: int) -> bool:
     """에셋 프로필과 이미지 파일을 삭제합니다. 본인 에셋만 삭제 가능."""
+    from app.models.user import User
+
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.user_id == user_id).first()
     if not asset:
         return False
+
+    file_size = asset.file_size or 0
 
     # 이미지 파일 삭제
     image_url = asset.image_url or ""
@@ -268,6 +273,13 @@ def delete_asset_profile(db: Session, asset_id: str, user_id: int) -> bool:
             os.remove(image_path)
 
     db.delete(asset)
+
+    # storage_used 차감
+    if file_size > 0:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.storage_used = max(0, (user.storage_used or 0) - file_size)
+
     db.commit()
     return True
 

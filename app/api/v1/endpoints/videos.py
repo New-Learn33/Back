@@ -57,7 +57,7 @@ def serialize_video_search_item(video, like_count: int, comment_count: int) -> d
         "thumbnail_url": video.thumbnail_url or "",
         "like_count": like_count,
         "comment_count": comment_count,
-        "view_count": 0,
+        "view_count": getattr(video, 'view_count', 0) or 0,
     }
 
 
@@ -71,7 +71,7 @@ def serialize_video_detail_item(video, like_count: int, comment_count: int, like
         "comment_count": comment_count,
         "liked": liked,
         "video_url": video.video_url,
-        "view_count": 0,
+        "view_count": getattr(video, 'view_count', 0) or 0,
     }
 
 
@@ -151,6 +151,14 @@ def get_video_detail(
 
     if not video_row:
         return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
+
+    # 조회수 +1
+    try:
+        video_row.view_count = (video_row.view_count or 0) + 1
+        db.commit()
+        db.refresh(video_row)
+    except SQLAlchemyError:
+        db.rollback()
 
     return success_response(
         data={

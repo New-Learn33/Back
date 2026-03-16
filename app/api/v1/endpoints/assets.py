@@ -5,7 +5,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.api.v1.endpoints.auth import get_current_user
-from app.models.user import User
+from app.models.user import User, STORAGE_LIMIT_BYTES
 from app.models.asset import Asset
 from app.services.asset_library_service import (
     create_asset_profile, get_asset_profiles, delete_asset_profile, asset_to_dict
@@ -31,6 +31,17 @@ async def upload_asset(
 
     try:
         content = await file.read()
+        file_size = len(content)
+
+        # 저장공간 초과 체크
+        current_used = current_user.storage_used or 0
+        if current_used + file_size > STORAGE_LIMIT_BYTES:
+            used_gb = round(current_used / (1024 ** 3), 2)
+            limit_gb = round(STORAGE_LIMIT_BYTES / (1024 ** 3), 1)
+            raise HTTPException(
+                status_code=413,
+                detail=f"저장공간이 부족합니다. (사용 중: {used_gb}GB / {limit_gb}GB)"
+            )
 
         profile = create_asset_profile(
             db=db,
@@ -40,6 +51,10 @@ async def upload_asset(
             category_id=category_id,
             asset_name=name,
         )
+
+        # storage_used 업데이트
+        current_user.storage_used = current_used + file_size
+        db.commit()
 
         return {
             "success": True,

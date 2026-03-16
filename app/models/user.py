@@ -1,6 +1,8 @@
-from sqlalchemy import BigInteger, Column, String, DateTime
+from sqlalchemy import BigInteger, Column, String, DateTime, Integer
 from sqlalchemy.sql import func
 from app.db.database import Base
+
+STORAGE_LIMIT_BYTES = 3 * 1024 * 1024 * 1024  # 3GB
 
 # 구글 로그인한 사용자를 저장
 class User(Base):
@@ -14,6 +16,7 @@ class User(Base):
     profile_image_url = Column(String(500), nullable=True)
     provider = Column(String(50), nullable=False)
     provider_id = Column(String(255), nullable=False, unique=True)
+    storage_used = Column(BigInteger, default=0, nullable=False)  # bytes
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
