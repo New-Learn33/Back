@@ -82,8 +82,8 @@ Consistency rules:
     return anchor_prompt.strip()
 
 
-def build_image_prompt(character_profile: dict, scene: dict, art_style: str = "webtoon") -> str:
-    character_anchor = build_character_anchor(character_profile)
+def build_image_prompt(character_profile: dict | None, scene: dict, art_style: str = "webtoon") -> str:
+    character_anchor = build_character_anchor(character_profile) if character_profile else ""
     style_desc = ART_STYLE_MAP.get(art_style, ART_STYLE_MAP["webtoon"])
 
     scene_prompt = f"""
