@@ -32,7 +32,7 @@ class GenerationData(BaseModel):
     job_id: int
     title: str
     category_id: int
-    selected_template_image: SelectedTemplateImage
+    selected_template_image: Optional[SelectedTemplateImage] = None
     scenes: List[SceneScriptItem]
     images: List[ImageResultItem]
 
@@ -93,3 +93,14 @@ class StabilityRenderVideoRequest(BaseModel):
     images: List[StabilitySceneImageItem]
     scenes: List[StabilitySceneDialogueItem]
     motion_intensity: str = Field(default="medium", example="medium")
+
+
+class SceneTextUpdateItem(BaseModel):
+    scene_order: int = Field(..., ge=1, le=6, example=1)
+    dialogue: Optional[str] = Field(None, min_length=1, max_length=500, example="수정된 대사")
+    subtitle_text: Optional[str] = Field(None, min_length=1, max_length=500, example="수정된 자막 설명")
+
+
+class GenerationTextUpdateRequest(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255, example="수정된 제목")
+    scenes: Optional[List[SceneTextUpdateItem]] = None
