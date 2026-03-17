@@ -23,6 +23,8 @@ def generate_video_from_image(image_path: str, output_path: str, motion_intensit
 
     import replicate
     client = replicate.Client(api_token=token)
+    client.poll_interval = 5  # 5초마다 상태 확인
+    client.timeout = 1800     # 30분 타임아웃
 
     motion_desc = MOTION_MAP.get(motion_intensity, MOTION_MAP["medium"])
 
@@ -35,6 +37,7 @@ def generate_video_from_image(image_path: str, output_path: str, motion_intensit
                 "first_frame_image": image_file,
                 "prompt_optimizer": True,
             },
+            timeout=1800,  # 30분
         )
 
     # Replicate 반환: URL 문자열 또는 FileOutput 객체
