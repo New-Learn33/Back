@@ -39,6 +39,9 @@ def init_db():
     # 기존 테이블에 누락된 컬럼 자동 추가
     _migrate_missing_columns()
 
+    # 기존 영상 썸네일 URL 수정 (rendered/ → generated/)
+    _fix_thumbnail_urls()
+
     # 기존 에셋 file_size 및 storage_used 동기화
     _sync_storage_usage()
 
@@ -59,6 +62,45 @@ def _migrate_missing_columns():
                 with engine.begin() as conn:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
                     print(f"[migrate] Added column {table}.{column}")
+
+
+def _fix_thumbnail_urls():
+    """썸네일 URL 수정: rendered/ → generated/, NULL/빈값 → generated 이미지로 채움"""
+    from app.models.video import Video
+    from app.models.generation_job import GenerationJob
+    from sqlalchemy import or_
+
+    r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+    db = SessionLocal()
+    try:
+        fixed = 0
+
+        # 1) rendered/ → generated/ 변환
+        broken = db.query(Video).filter(Video.thumbnail_url.like("%/rendered/%")).all()
+        for v in broken:
+            v.thumbnail_url = v.thumbnail_url.replace("/rendered/", "/generated/")
+            fixed += 1
+
+        # 2) thumbnail_url이 NULL이거나 빈 문자열인 영상 → job_id 기반으로 generated 이미지 설정
+        empty = db.query(Video).filter(
+            or_(Video.thumbnail_url == None, Video.thumbnail_url == "")
+        ).all()
+        for v in empty:
+            job_id = v.job_id
+            if r2_base:
+                v.thumbnail_url = f"{r2_base}/generated/{job_id}_1.png"
+            else:
+                v.thumbnail_url = f"/static/generated/{job_id}_1.png"
+            fixed += 1
+
+        if fixed:
+            db.commit()
+            print(f"[fix] Fixed {fixed} video thumbnail URLs ({len(broken)} rendered→generated, {len(empty)} empty→generated)")
+    except Exception as e:
+        db.rollback()
+        print(f"[fix] Thumbnail URL fix error: {e}")
+    finally:
+        db.close()
 
 
 def _sync_storage_usage():
