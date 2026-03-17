@@ -13,7 +13,7 @@ class GenerationRequest(BaseModel):
     prompt: str = Field(..., example="세상이 멸망하는데 히어로가 늦잠을 잤다")
     art_style: str = Field(default="webtoon", example="webtoon")
     genre: str = Field(default="auto", example="comedy")
-    image_quality: str = Field(default="medium", example="medium")
+    image_quality: str = Field(default="high", example="high")
     motion_intensity: str = Field(default="medium", example="medium")
 
 
