@@ -651,15 +651,10 @@ def render_video(
 
         job.video_url = video_url
 
-        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정
+        # 썸네일이 없으면 자막 합성 이미지 중 랜덤으로 지정 (실제 URL 사용)
         if not job.thumbnail_url and request.subtitle_images:
             random_img = _random.choice(request.subtitle_images)
-            auto_thumbnail = f"/static/rendered/{request.job_id}_{random_img.scene_order}.png"
-            # R2에 업로드된 이미지 URL 패턴으로 시도
-            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
-            if r2_base:
-                auto_thumbnail = f"{r2_base}/rendered/{request.job_id}_{random_img.scene_order}.png"
-            job.thumbnail_url = auto_thumbnail
+            job.thumbnail_url = random_img.image_url
 
         job.status = "completed"
         job.progress = 100
@@ -935,14 +930,17 @@ def render_video_with_svd(
 
         job.video_url = uploaded_video["url"]
 
-        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정
-        if not job.thumbnail_url and request.scenes:
-            random_scene = _random.choice(request.scenes)
-            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
-            if r2_base:
-                job.thumbnail_url = f"{r2_base}/rendered/{request.job_id}_{random_scene.scene_order}.png"
+        # 썸네일이 없으면 생성된 이미지 중 랜덤으로 지정 (generated/ 폴더의 실제 URL 사용)
+        if not job.thumbnail_url and request.images:
+            random_img = _random.choice(request.images)
+            if random_img.image_url:
+                job.thumbnail_url = random_img.image_url
             else:
-                job.thumbnail_url = f"/static/rendered/{request.job_id}_{random_scene.scene_order}.png"
+                r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+                if r2_base:
+                    job.thumbnail_url = f"{r2_base}/generated/{request.job_id}_{random_img.scene_order}.png"
+                else:
+                    job.thumbnail_url = f"/static/generated/{request.job_id}_{random_img.scene_order}.png"
 
         job.status = "completed"
         job.progress = 100
