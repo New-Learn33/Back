@@ -1,3 +1,5 @@
+import asyncio
+from app.services.notification_service import create_notification, push_notification_to_user
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -20,6 +22,38 @@ from app.utils.success_response import success_response
 router = APIRouter()
 
 
+# @router.post("/videos/{video_id}/likes", response_model=LikeResponse)
+# def add_video_like(
+#     video_id: int,
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db),
+# ):
+#     if isinstance(current_user, JSONResponse):
+#         return current_user
+
+#     if not get_video_by_id(db, video_id):
+#         return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
+
+#     try:
+#         existing_like = get_like(db, video_id=video_id, user_id=current_user.id)
+#         if not existing_like:
+#             create_like(db, video_id=video_id, user_id=current_user.id)
+
+#         like_count = count_likes_by_video(db, video_id)
+#     except IntegrityError:
+#         db.rollback()
+#         like_count = count_likes_by_video(db, video_id)
+#     except SQLAlchemyError:
+#         db.rollback()
+#         return error_response(500, "RESPONSE_001", "서버와의 연결에 실패했습니다.")
+
+#     return success_response(
+#         data={"video_id": video_id, "liked": True, "like_count": like_count},
+#         message="좋아요 추가 성공",
+#         status_code=201,
+#     )
+
+# 알림 기능 추가 좋아요 API
 @router.post("/videos/{video_id}/likes", response_model=LikeResponse)
 def add_video_like(
     video_id: int,
@@ -29,15 +63,33 @@ def add_video_like(
     if isinstance(current_user, JSONResponse):
         return current_user
 
-    if not get_video_by_id(db, video_id):
+    video = get_video_by_id(db, video_id)
+    if not video:
         return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
 
     try:
         existing_like = get_like(db, video_id=video_id, user_id=current_user.id)
+        created_like = False
+
         if not existing_like:
             create_like(db, video_id=video_id, user_id=current_user.id)
+            created_like = True
 
         like_count = count_likes_by_video(db, video_id)
+
+        # 새 좋아요가 실제로 생성됐고, 자기 영상이 아닐 때만 알림 생성
+        if created_like and video.user_id != current_user.id:
+            notification = create_notification(
+                db,
+                recipient_user_id=video.user_id,
+                actor_user_id=current_user.id,
+                type="like",
+                title="좋아요 알림",
+                message=f"{current_user.nickname}님이 회원님의 영상에 좋아요를 눌렀습니다.",
+                video_id=video.id,
+            )
+            asyncio.run(push_notification_to_user(db, video.user_id, notification))
+
     except IntegrityError:
         db.rollback()
         like_count = count_likes_by_video(db, video_id)
@@ -50,7 +102,6 @@ def add_video_like(
         message="좋아요 추가 성공",
         status_code=201,
     )
-
 
 @router.delete("/videos/{video_id}/likes", response_model=LikeResponse)
 def remove_video_like(

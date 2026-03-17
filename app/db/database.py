@@ -33,6 +33,7 @@ def init_db():
     import app.models.comment
     import app.models.preset
     import app.models.asset
+    import app.models.notification
 
     Base.metadata.create_all(bind=engine)
 
