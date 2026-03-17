@@ -206,6 +206,8 @@ def asset_to_dict(asset: Asset) -> dict:
         "style_keywords": asset.style_keywords,
         "forbidden_changes": asset.forbidden_changes,
         "custom_tags": asset.custom_tags or [],
+        "file_size": asset.file_size or 0,
+        "created_at": asset.created_at.isoformat() if asset.created_at else None,
     }
 
 
