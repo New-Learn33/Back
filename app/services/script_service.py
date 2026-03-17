@@ -100,6 +100,13 @@ Rules:
 - Do NOT define or change appearance such as gender, hairstyle, outfit, accessories, body type, or colors.
 - Character visual identity is managed separately by the system.
 - Keep each scene visually distinct in action/emotion, but not in character identity.{genre_rule}
+
+Image-friendly scene rules (IMPORTANT — follow these to produce better illustrations):
+- Prefer upper-body or medium-shot compositions. Avoid extreme close-ups of hands or fingers.
+- NEVER describe hand gestures in detail (e.g. "points finger", "V sign", "grabs with hand"). Instead describe the character's emotion or body language (e.g. "looks determined", "leans forward confidently").
+- Avoid scenes where characters hold small objects prominently — prefer scenes focused on expressions and posture.
+- Keep background descriptions simple and clear. Don't overcrowd scenes with many characters or objects.
+- Each subtitle_text should be a clear, single-action visual description that an AI image generator can illustrate well.
 """
 
     user_prompt = f"""
@@ -111,7 +118,7 @@ Rules:
 
     try:
         response = client.responses.create(
-            model="gpt-4.1-mini",
+            model="gpt-4.1",
             input=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
