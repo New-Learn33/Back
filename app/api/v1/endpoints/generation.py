@@ -245,6 +245,8 @@
 import os
 import json
 import random as _random
+import threading
+from app.services.background_video_generation_service import run_svd_video_generation_background
 from app.models.video import Video
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -1080,6 +1082,55 @@ def update_generation_text(
                 ]
             },
             "텍스트 수정 성공"
+        )
+
+    except Exception as e:
+        db.rollback()
+        return error_response(500, "SERVER_001", str(e))
+    
+# SVD 영상 생성 API (백그라운드 작업) - 프론트에서 영상 생성 요청 시 바로 응답하고, 실제 생성 작업은 백그라운드에서 처리
+@router.post("/render/video/svd/background")
+def render_video_with_svd_background(
+    request: StabilityRenderVideoRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    job = db.query(GenerationJob).filter(GenerationJob.id == request.job_id).first()
+    if not job:
+        return error_response(404, "REQUEST_007", "job을 찾을 수 없습니다.")
+
+    if job.user_id != current_user.id:
+        return error_response(403, "REQUEST_006", "권한이 없는 유저의 접근입니다.")
+
+    try:
+        job.status = "processing"
+        if job.progress < 40:
+            job.progress = 40
+        db.commit()
+
+        worker = threading.Thread(
+            target=run_svd_video_generation_background,
+            kwargs={
+                "job_id": request.job_id,
+                "current_user_id": current_user.id,
+                "images": [img.model_dump() for img in request.images],
+                "scenes": [scene.model_dump() for scene in request.scenes],
+                "motion_intensity": request.motion_intensity,
+            },
+            daemon=True,
+        )
+        worker.start()
+
+        return success_response(
+            data={
+                "job_id": request.job_id,
+                "status": "processing",
+                "progress": job.progress,
+            },
+            message="백그라운드 영상 생성 작업이 시작되었습니다.",
         )
 
     except Exception as e:
