@@ -291,6 +291,7 @@ def get_me(current_user: User = Depends(get_current_user)):
             "profile_image_url": current_user.profile_image_url,
             "provider": current_user.provider,
             "provider_id": current_user.provider_id,
+            "storage_used": current_user.storage_used or 0,
         },
         message="내 정보 조회 성공"
     )
