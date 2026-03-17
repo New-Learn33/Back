@@ -1,15 +1,15 @@
-# SVD 영상 생성
+# Minimax Video-01 영상 생성 (이전 SVD 대체)
 
 import os
 import requests
 
-# 모델 : christophy/stable-video-diffusion
-MODEL_REF = "christophy/stable-video-diffusion:92a0c9a9cb1fd93ea0361d15e499dc879b35095077b2feed47315ccab4524036"
+# Minimax Video-01 — Replicate에서 사용 가능한 고품질 I2V 모델
+MODEL_REF = "minimax/video-01"
 
 MOTION_MAP = {
-    "low": 40,
-    "medium": 127,
-    "high": 200,
+    "low": "subtle gentle motion, slow camera movement, minimal animation",
+    "medium": "natural moderate motion, smooth camera movement, lively animation",
+    "high": "dynamic energetic motion, dramatic camera movement, intense animation",
 }
 
 
@@ -24,27 +24,24 @@ def generate_video_from_image(image_path: str, output_path: str, motion_intensit
     import replicate
     client = replicate.Client(api_token=token)
 
-    motion_id = MOTION_MAP.get(motion_intensity, 127)
+    motion_desc = MOTION_MAP.get(motion_intensity, MOTION_MAP["medium"])
 
+    # 이미지를 파일 객체로 전달
     with open(image_path, "rb") as image_file:
         output = client.run(
             MODEL_REF,
             input={
-                "input_image": image_file,
-                "video_length": "14_frames_with_svd",
-                "sizing_strategy": "maintain_aspect_ratio",
-                "frames_per_second": 6,
-                "motion_bucket_id": motion_id,
-                "cond_aug": 0.02,
-                "decoding_t": 14,
+                "prompt": f"Animate this illustration with {motion_desc}. Keep the character consistent, maintain art style, smooth natural movement.",
+                "first_frame_image": image_file,
+                "prompt_optimizer": True,
             },
         )
 
-    file_output = output[0] if isinstance(output, list) else output
+    # Replicate 반환: URL 문자열 또는 FileOutput 객체
+    file_output = output if isinstance(output, str) else output
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    # 반환 타입이 파일 객체일 수도 있고 URL 문자열일 수도 있어서 둘 다 대응
     if hasattr(file_output, "read"):
         with open(output_path, "wb") as f:
             f.write(file_output.read())
