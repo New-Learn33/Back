@@ -1005,11 +1005,14 @@ def render_video_with_svd(
         )
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"[SVD ERROR] {type(e).__name__}: {e}")
         job.status = "failed"
         job.progress = 0
         db.commit()
         return error_response(500, "SERVER_001", str(e))
-    
+
 
 # 수정 API
 @router.patch("/jobs/{job_id}/text")
