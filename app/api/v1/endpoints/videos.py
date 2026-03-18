@@ -11,6 +11,7 @@ from app.schemas.video import (
     VideoListResponse,
     VideoSearchResponse,
 )
+from app.models.user import User
 from app.services.video_service import (
     get_liked_video_ids,
     get_video_by_id,
@@ -37,7 +38,48 @@ def get_optional_user_id(
     return int(user_id) if user_id else None
 
 
-def serialize_video_list_item(video, like_count: int, comment_count: int, liked: bool) -> dict:
+def _creator_fields(user) -> dict:
+    if not user:
+        return {"creator": None, "creator_nickname": "알 수 없음", "creator_avatar_url": None}
+    return {
+        "creator": user.name,
+        "creator_nickname": user.nickname or user.name or "알 수 없음",
+        "creator_avatar_url": user.profile_image_url,
+    }
+
+
+def serialize_video_list_item(video, like_count: int, comment_count: int, liked: bool, user=None) -> dict:
+    return {
+        "id": video.id,
+        "title": video.title,
+        "category_id": video.category_id,
+        "thumbnail_url": video.thumbnail_url or "",
+        "video_url": video.video_url or "",
+        "created_at": video.created_at.isoformat() if video.created_at else None,
+        "like_count": like_count,
+        "comment_count": comment_count,
+        "liked": liked,
+        "view_count": getattr(video, 'view_count', 0) or 0,
+        **_creator_fields(user),
+    }
+
+
+def serialize_video_search_item(video, like_count: int, comment_count: int, user=None) -> dict:
+    return {
+        "id": video.id,
+        "title": video.title,
+        "category_id": video.category_id,
+        "thumbnail_url": video.thumbnail_url or "",
+        "video_url": video.video_url or "",
+        "created_at": video.created_at.isoformat() if video.created_at else None,
+        "like_count": like_count,
+        "comment_count": comment_count,
+        "view_count": getattr(video, 'view_count', 0) or 0,
+        **_creator_fields(user),
+    }
+
+
+def serialize_video_detail_item(video, like_count: int, comment_count: int, liked: bool, user=None) -> dict:
     return {
         "id": video.id,
         "title": video.title,
@@ -46,32 +88,10 @@ def serialize_video_list_item(video, like_count: int, comment_count: int, liked:
         "like_count": like_count,
         "comment_count": comment_count,
         "liked": liked,
-    }
-
-
-def serialize_video_search_item(video, like_count: int, comment_count: int) -> dict:
-    return {
-        "id": video.id,
-        "title": video.title,
-        "category_id": video.category_id,
-        "thumbnail_url": video.thumbnail_url or "",
-        "like_count": like_count,
-        "comment_count": comment_count,
+        "video_url": video.video_url or "",
+        "created_at": video.created_at.isoformat() if video.created_at else None,
         "view_count": getattr(video, 'view_count', 0) or 0,
-    }
-
-
-def serialize_video_detail_item(video, like_count: int, comment_count: int, liked: bool) -> dict:
-    return {
-        "id": video.id,
-        "title": video.title,
-        "category_id": video.category_id,
-        "thumbnail_url": video.thumbnail_url or "",
-        "like_count": like_count,
-        "comment_count": comment_count,
-        "liked": liked,
-        "video_url": video.video_url,
-        "view_count": getattr(video, 'view_count', 0) or 0,
+        **_creator_fields(user),
     }
 
 
@@ -88,6 +108,9 @@ def get_videos(
             if user_id
             else set()
         )
+        # 유저 정보 한번에 조회
+        user_ids = list({v.user_id for v in video_rows})
+        users = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
     except SQLAlchemyError:
         db.rollback()
         return error_response(500, "RESPONSE_001", "서버와의 연결에 실패했습니다.")
@@ -100,6 +123,7 @@ def get_videos(
                     video.like_count,
                     video.comment_count,
                     video.id in liked_video_ids,
+                    user=users.get(video.user_id),
                 )
                 for video in video_rows
             ]
@@ -119,6 +143,8 @@ def search_videos(
 
     try:
         matched_videos = search_videos_by_title(db, keyword)
+        user_ids = list({v.user_id for v in matched_videos})
+        users = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
     except SQLAlchemyError:
         db.rollback()
         return error_response(500, "RESPONSE_001", "서버와의 연결에 실패했습니다.")
@@ -126,7 +152,7 @@ def search_videos(
     return success_response(
         data={
             "videos": [
-                serialize_video_search_item(video, video.like_count, video.comment_count)
+                serialize_video_search_item(video, video.like_count, video.comment_count, user=users.get(video.user_id))
                 for video in matched_videos
             ]
         },
@@ -152,6 +178,9 @@ def get_video_detail(
     if not video_row:
         return error_response(404, "REQUEST_007", "영상을 찾을 수 없습니다.")
 
+    # 작성자 조회
+    creator_user = db.query(User).filter(User.id == video_row.user_id).first()
+
     # 조회수 +1
     try:
         video_row.view_count = (video_row.view_count or 0) + 1
@@ -167,6 +196,7 @@ def get_video_detail(
                 video_row.like_count,
                 video_row.comment_count,
                 video_row.id in liked_video_ids,
+                user=creator_user,
             )
         },
         message="영상 상세 조회 성공",

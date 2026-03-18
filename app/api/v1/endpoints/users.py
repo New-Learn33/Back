@@ -13,6 +13,7 @@ from app.schemas.user import (
     UserVideoListResponse,
 )
 from app.models.user import STORAGE_LIMIT_BYTES
+from app.models.generation_job import GenerationJob
 from app.services.comment_service import list_comments_by_user
 from app.services.video_service import list_liked_videos_by_user, list_videos_by_user
 from app.utils.error_response import error_response
@@ -169,4 +170,74 @@ def get_my_storage(current_user: User = Depends(get_current_user)):
             "storage_limit_gb": round(STORAGE_LIMIT_BYTES / (1024 ** 3), 1),
         },
         message="저장공간 조회 성공",
+    )
+
+
+@router.get("/me/projects")
+def get_my_projects(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """내 작업 목록: 완료된 영상 + 진행중인 생성 작업"""
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    try:
+        # 완료된 영상
+        videos = list_videos_by_user(db, current_user.id)
+        # 진행중인 생성 작업 (pending, processing)
+        jobs = (
+            db.query(GenerationJob)
+            .filter(
+                GenerationJob.user_id == current_user.id,
+                GenerationJob.status.in_(["pending", "processing"]),
+            )
+            .order_by(GenerationJob.created_at.desc())
+            .all()
+        )
+    except SQLAlchemyError:
+        db.rollback()
+        return error_response(500, "RESPONSE_001", "서버와의 연결에 실패했습니다.")
+
+    projects = []
+
+    # 완료된 영상
+    for v in videos:
+        projects.append({
+            "id": v.id,
+            "type": "video",
+            "title": v.title,
+            "category_id": v.category_id,
+            "thumbnail_url": v.thumbnail_url or "",
+            "video_url": v.video_url or "",
+            "status": "completed",
+            "like_count": v.like_count,
+            "comment_count": v.comment_count,
+            "view_count": getattr(v, "view_count", 0) or 0,
+            "created_at": v.created_at.isoformat() if v.created_at else None,
+        })
+
+    # 진행중인 작업
+    for j in jobs:
+        projects.append({
+            "id": j.id,
+            "type": "job",
+            "title": j.title or "생성 중...",
+            "category_id": j.category_id,
+            "thumbnail_url": j.thumbnail_url or "",
+            "video_url": "",
+            "status": j.status,  # pending or processing
+            "progress": j.progress or 0,
+            "like_count": 0,
+            "comment_count": 0,
+            "view_count": 0,
+            "created_at": j.created_at.isoformat() if j.created_at else None,
+        })
+
+    # 최신순 정렬
+    projects.sort(key=lambda p: p.get("created_at") or "", reverse=True)
+
+    return success_response(
+        data={"projects": projects},
+        message="작업 목록 조회 성공",
     )
