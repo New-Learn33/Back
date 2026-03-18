@@ -127,7 +127,8 @@ def _sync_storage_usage():
             if updated_count:
                 print(f"[sync] Updated file_size for {updated_count}/{len(zero_assets)} assets")
 
-        # 2) 유저별 storage_used 재계산 (file_size > 0인 에셋만 합산)
+        # 2) 유저별 storage_used 보정 (에셋 합계가 현재 storage_used보다 크면 갱신, 작으면 유지)
+        # 생성된 이미지/영상 용량은 별도로 누적되므로 에셋 합계로 덮어쓰면 안 됨
         from sqlalchemy import func as sqlfunc
         user_storage = (
             db.query(Asset.user_id, sqlfunc.sum(Asset.file_size))
@@ -135,13 +136,19 @@ def _sync_storage_usage():
             .group_by(Asset.user_id)
             .all()
         )
-        for user_id, total in user_storage:
+        updated_users = 0
+        for user_id, asset_total in user_storage:
             user = db.query(User).filter(User.id == user_id).first()
             if user:
-                user.storage_used = total or 0
+                asset_total = asset_total or 0
+                current = user.storage_used or 0
+                # 에셋 합계가 현재보다 크면 (file_size가 새로 채워진 경우) 갱신
+                if asset_total > current:
+                    user.storage_used = asset_total
+                    updated_users += 1
         db.commit()
-        if user_storage:
-            print(f"[sync] Recalculated storage_used for {len(user_storage)} users")
+        if updated_users:
+            print(f"[sync] Updated storage_used for {updated_users} users (asset totals were higher)")
     except Exception as e:
         db.rollback()
         print(f"[sync] Storage sync error: {e}")

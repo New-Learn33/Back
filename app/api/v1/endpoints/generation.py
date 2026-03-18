@@ -532,6 +532,28 @@ def generate_content_stream(
                 except Exception:
                     pass
 
+            # 그림 생성 완료 알림
+            try:
+                from app.db.database import SessionLocal as _SL2
+                from app.services.notification_service import create_notification, push_notification_to_user
+                import asyncio as _asyncio
+                _db2 = _SL2()
+                try:
+                    _notif = create_notification(
+                        _db2,
+                        recipient_user_id=current_user.id,
+                        actor_user_id=None,
+                        type="image_completed",
+                        title="이미지 생성 완료",
+                        message=f"'{script_result['title']}' 이미지 6장 생성이 완료되었습니다.",
+                        job_id=job_id,
+                    )
+                    _asyncio.run(push_notification_to_user(_db2, current_user.id, _notif))
+                finally:
+                    _db2.close()
+            except Exception:
+                pass
+
             # 완료
             template_image = {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']} if selected_character else None
             yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': template_image, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
