@@ -241,3 +241,34 @@ def get_my_projects(
         data={"projects": projects},
         message="작업 목록 조회 성공",
     )
+
+
+@router.delete("/me/projects/{job_id}")
+def cancel_my_project(
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """진행중인 작업 취소 (generation_job 상태를 cancelled로 변경)"""
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    job = (
+        db.query(GenerationJob)
+        .filter(GenerationJob.id == job_id, GenerationJob.user_id == current_user.id)
+        .first()
+    )
+
+    if not job:
+        return error_response(404, "REQUEST_007", "작업을 찾을 수 없습니다.")
+
+    if job.status not in ("pending", "processing"):
+        return error_response(400, "REQUEST_001", "이미 완료되었거나 취소된 작업입니다.")
+
+    job.status = "cancelled"
+    db.commit()
+
+    return success_response(
+        data={"job_id": job.id, "status": "cancelled"},
+        message="작업이 취소되었습니다.",
+    )
