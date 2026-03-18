@@ -11,6 +11,10 @@ class Preset(Base):
     name = Column(String(100), nullable=False)  # 프리셋 이름
     prompt = Column(Text, nullable=False)  # 저장된 프롬프트
     category_id = Column(Integer, nullable=False)  # 카테고리
+    art_style = Column(String(50), nullable=True)
+    genre = Column(String(50), nullable=True)
+    image_quality = Column(String(20), nullable=True)
+    motion_intensity = Column(String(20), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

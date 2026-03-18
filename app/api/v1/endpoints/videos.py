@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
+from pydantic import BaseModel
+from typing import Optional
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.v1.endpoints.auth import security
+from app.api.v1.endpoints.auth import security, get_current_user
 from app.core.security import decode_access_token
 from app.db.database import get_db
+from app.models.generation_job import GenerationJob
+from app.models.video import Video
 from app.schemas.video import (
     VideoDetailResponse,
     VideoListResponse,
@@ -20,6 +25,10 @@ from app.services.video_service import (
 )
 from app.utils.error_response import error_response
 from app.utils.success_response import success_response
+
+
+class VideoUpdateRequest(BaseModel):
+    title: Optional[str] = None
 
 router = APIRouter()
 
@@ -82,6 +91,7 @@ def serialize_video_search_item(video, like_count: int, comment_count: int, user
 def serialize_video_detail_item(video, like_count: int, comment_count: int, liked: bool, user=None) -> dict:
     return {
         "id": video.id,
+        "user_id": video.user_id,
         "title": video.title,
         "category_id": video.category_id,
         "thumbnail_url": video.thumbnail_url or "",
@@ -200,4 +210,74 @@ def get_video_detail(
             )
         },
         message="영상 상세 조회 성공",
+    )
+
+
+@router.patch("/videos/{video_id}")
+def update_video(
+    video_id: int,
+    request: VideoUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """영상 제목 수정 (소유자만)"""
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    video = db.query(Video).filter(
+        Video.id == video_id,
+        Video.user_id == current_user.id,
+    ).first()
+
+    if not video:
+        return error_response(404, "REQUEST_007", "영상을 찾을 수 없거나 권한이 없습니다.")
+
+    if request.title is not None:
+        video.title = request.title
+        # GenerationJob 제목도 동기화
+        job = db.query(GenerationJob).filter(GenerationJob.id == video.job_id).first()
+        if job:
+            job.title = request.title
+
+    db.commit()
+
+    return success_response(
+        data={"id": video.id, "title": video.title},
+        message="영상이 수정되었습니다.",
+    )
+
+
+@router.delete("/videos/{video_id}")
+def delete_video(
+    video_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """영상 삭제 (소유자만)"""
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    video = db.query(Video).filter(
+        Video.id == video_id,
+        Video.user_id == current_user.id,
+    ).first()
+
+    if not video:
+        return error_response(404, "REQUEST_007", "영상을 찾을 수 없거나 권한이 없습니다.")
+
+    job_id = video.job_id
+
+    # Video 삭제
+    db.delete(video)
+
+    # 연결된 GenerationJob도 삭제
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    if job:
+        db.delete(job)
+
+    db.commit()
+
+    return success_response(
+        data={"video_id": video_id, "status": "deleted"},
+        message="영상이 삭제되었습니다.",
     )

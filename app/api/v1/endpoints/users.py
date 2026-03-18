@@ -48,6 +48,7 @@ def serialize_user_comment(comment) -> dict:
     return {
         "id": comment.id,
         "video_id": comment.video_id,
+        "video_title": getattr(comment, 'video_title', None),
         "content": comment.content,
     }
 
@@ -249,7 +250,7 @@ def cancel_my_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """진행중인 작업 취소 (generation_job 상태를 cancelled로 변경)"""
+    """작업 삭제 (진행중이면 취소, 완료면 삭제)"""
     if isinstance(current_user, JSONResponse):
         return current_user
 
@@ -262,13 +263,19 @@ def cancel_my_project(
     if not job:
         return error_response(404, "REQUEST_007", "작업을 찾을 수 없습니다.")
 
-    if job.status not in ("pending", "processing"):
-        return error_response(400, "REQUEST_001", "이미 완료되었거나 취소된 작업입니다.")
+    if job.status in ("pending", "processing"):
+        job.status = "cancelled"
+        db.commit()
+        return success_response(
+            data={"job_id": job.id, "status": "cancelled"},
+            message="작업이 취소되었습니다.",
+        )
 
-    job.status = "cancelled"
+    # 완료/실패/취소된 작업은 DB에서 삭제
+    db.delete(job)
     db.commit()
 
     return success_response(
-        data={"job_id": job.id, "status": "cancelled"},
-        message="작업이 취소되었습니다.",
+        data={"job_id": job_id, "status": "deleted"},
+        message="작업이 삭제되었습니다.",
     )
