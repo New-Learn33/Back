@@ -181,13 +181,28 @@ def save_uploaded_file(file_bytes: bytes, original_filename: str, category_id: i
     safe_name = sanitize_stem(os.path.splitext(original_filename)[0])
     unique_filename = f"{safe_name}_{uuid.uuid4().hex[:8]}{ext}"
 
+    # 로컬 저장 (GPT 분석용)
     save_dir = os.path.join(TEMPLATES_DIR, folder_name)
     save_path = os.path.join(save_dir, unique_filename)
 
     with open(save_path, "wb") as f:
         f.write(file_bytes)
 
-    image_url = f"/static/templates/{folder_name}/{unique_filename}"
+    # R2 업로드 시도 → 성공하면 R2 URL 사용, 실패하면 로컬 URL 폴백
+    try:
+        from app.services.r2_service import upload_local_file_to_r2
+        content_type_map = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+        uploaded = upload_local_file_to_r2(
+            local_file_path=save_path,
+            folder=f"assets/{folder_name}",
+            filename=unique_filename,
+            content_type=content_type_map.get(ext, "image/png"),
+        )
+        image_url = uploaded["url"]
+    except Exception as e:
+        print(f"[asset] R2 업로드 실패, 로컬 URL 사용: {e}")
+        image_url = f"/static/templates/{folder_name}/{unique_filename}"
+
     return save_path, image_url
 
 
@@ -273,6 +288,17 @@ def delete_asset_profile(db: Session, asset_id: str, user_id: int) -> bool:
         image_path = os.path.join(BASE_DIR, image_url.lstrip("/"))
         if os.path.exists(image_path):
             os.remove(image_path)
+    elif image_url.startswith("http"):
+        # R2에 저장된 파일 삭제 시도
+        try:
+            from app.core.r2_client import get_r2_client
+            r2_base = os.getenv("R2_PUBLIC_BASE_URL", "")
+            if r2_base and image_url.startswith(r2_base):
+                object_key = image_url[len(r2_base):].lstrip("/")
+                s3 = get_r2_client()
+                s3.delete_object(Bucket=os.getenv("R2_BUCKET_NAME"), Key=object_key)
+        except Exception as e:
+            print(f"[asset] R2 파일 삭제 실패: {e}")
 
     db.delete(asset)
 

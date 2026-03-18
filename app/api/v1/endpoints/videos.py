@@ -267,15 +267,31 @@ def delete_video(
 
     job_id = video.job_id
 
-    # Video 삭제
-    db.delete(video)
+    try:
+        # 1) 댓글 삭제
+        from app.models.comment import Comment
+        db.query(Comment).filter(Comment.video_id == video_id).delete()
 
-    # 연결된 GenerationJob도 삭제
-    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-    if job:
-        db.delete(job)
+        # 2) 좋아요 삭제
+        from app.models.video_like import VideoLike
+        db.query(VideoLike).filter(VideoLike.video_id == video_id).delete()
 
-    db.commit()
+        # 3) Video 삭제
+        db.delete(video)
+
+        # 4) GenerationScene 삭제
+        from app.models.generation_scene import GenerationScene
+        db.query(GenerationScene).filter(GenerationScene.job_id == job_id).delete()
+
+        # 5) GenerationJob 삭제
+        job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+        if job:
+            db.delete(job)
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        return error_response(500, "SERVER_001", f"삭제 중 오류가 발생했습니다: {str(e)}")
 
     return success_response(
         data={"video_id": video_id, "status": "deleted"},
