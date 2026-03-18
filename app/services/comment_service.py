@@ -48,9 +48,17 @@ def delete_comment(db: Session, comment: Comment) -> None:
 
 
 def list_comments_by_user(db: Session, user_id: int):
-    return (
-        db.query(Comment)
+    from app.models.generation_job import GenerationJob
+    results = (
+        db.query(Comment, GenerationJob.title)
+        .outerjoin(GenerationJob, Comment.video_id == GenerationJob.id)
         .filter(Comment.user_id == user_id)
         .order_by(Comment.created_at.desc(), Comment.id.desc())
         .all()
     )
+    # (Comment, title) 튜플에 video_title 속성 부착
+    comments = []
+    for comment, video_title in results:
+        comment.video_title = video_title
+        comments.append(comment)
+    return comments
