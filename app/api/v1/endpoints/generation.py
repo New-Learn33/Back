@@ -280,8 +280,22 @@ from fastapi.responses import JSONResponse
 from app.schemas.generation_schema import GenerationTextUpdateRequest
 from app.models.generation_scene import GenerationScene
 
+from datetime import datetime, timedelta
+from sqlalchemy import func as sqlfunc
+
+DAILY_GENERATION_LIMIT = 3
 
 router = APIRouter()
+
+
+def check_daily_limit(db: Session, user_id: int):
+    """오늘 생성한 영상 횟수가 제한을 초과했는지 확인"""
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    count = db.query(sqlfunc.count(GenerationJob.id)).filter(
+        GenerationJob.user_id == user_id,
+        GenerationJob.created_at >= today_start,
+    ).scalar()
+    return count
 
 # 로컬 작업 경로용 함수
 def local_url_to_file_path(url: str):
@@ -306,6 +320,15 @@ def generate_content(
 ):
     if isinstance(current_user, JSONResponse):
         return current_user
+
+    # 일일 생성 횟수 제한 체크
+    today_count = check_daily_limit(db, current_user.id)
+    if today_count >= DAILY_GENERATION_LIMIT:
+        return error_response(
+            429, "LIMIT_001",
+            f"하루 영상 생성 횟수({DAILY_GENERATION_LIMIT}회)를 초과했습니다. 내일 다시 시도해주세요."
+        )
+
     selected_character = pick_random_character(request.category_id, current_user.id, db)
     # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
@@ -408,6 +431,15 @@ def generate_content_stream(
 ):
     if isinstance(current_user, JSONResponse):
         return current_user
+
+    # 일일 생성 횟수 제한 체크
+    today_count = check_daily_limit(db, current_user.id)
+    if today_count >= DAILY_GENERATION_LIMIT:
+        return error_response(
+            429, "LIMIT_001",
+            f"하루 영상 생성 횟수({DAILY_GENERATION_LIMIT}회)를 초과했습니다. 내일 다시 시도해주세요."
+        )
+
     # 제너레이터 밖에서 미리 값 추출 (제너레이터 안에서 request 접근 시 문제 방지)
     category_id = request.category_id
     prompt_text = request.prompt
@@ -1158,3 +1190,25 @@ def render_video_with_svd_background(
     except Exception as e:
         db.rollback()
         return error_response(500, "SERVER_001", str(e))
+
+
+# 오늘 남은 생성 횟수 조회 API
+@router.get("/daily-limit")
+def get_daily_limit(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+
+    today_count = check_daily_limit(db, current_user.id)
+    remaining = max(0, DAILY_GENERATION_LIMIT - today_count)
+
+    return success_response(
+        {
+            "daily_limit": DAILY_GENERATION_LIMIT,
+            "used_today": today_count,
+            "remaining": remaining,
+        },
+        "일일 생성 횟수 조회 성공"
+    )

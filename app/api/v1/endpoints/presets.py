@@ -67,21 +67,27 @@ def get_presets(db: Session = Depends(get_db)):
 def create_preset(request: PresetCreate, db: Session = Depends(get_db)):
     user_id = 1  # TODO: 인증
 
-    preset = Preset(
-        user_id=user_id,
-        name=request.name,
-        prompt=request.prompt,
-        category_id=request.category_id,
-        art_style=request.art_style,
-        genre=request.genre,
-        image_quality=request.image_quality,
-        motion_intensity=request.motion_intensity,
-    )
-    db.add(preset)
-    db.commit()
-    db.refresh(preset)
+    try:
+        preset = Preset(
+            user_id=user_id,
+            name=request.name,
+            prompt=request.prompt,
+            category_id=request.category_id,
+            art_style=request.art_style,
+            genre=request.genre,
+            image_quality=request.image_quality,
+            motion_intensity=request.motion_intensity,
+        )
+        db.add(preset)
+        db.commit()
+        db.refresh(preset)
 
-    return success_response(serialize_preset(preset), "프리셋 저장 성공")
+        return success_response(serialize_preset(preset), "프리셋 저장 성공")
+    except Exception as e:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
+        return error_response(500, "PRESET_002", f"프리셋 저장 실패: {str(e)}")
 
 
 # 프리셋 수정

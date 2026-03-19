@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, String, DateTime, Integer
+from sqlalchemy import BigInteger, Boolean, Column, String, DateTime, Integer
 from sqlalchemy.sql import func
 from app.db.database import Base
 
@@ -17,6 +17,12 @@ class User(Base):
     provider = Column(String(50), nullable=False)
     provider_id = Column(String(255), nullable=False, unique=True)
     storage_used = Column(BigInteger, default=0, nullable=False)  # bytes
+
+    # 환경설정
+    notifications_enabled = Column(Boolean, default=True, nullable=False)
+    auto_save = Column(Boolean, default=True, nullable=False)
+    default_quality = Column(String(20), default="high", nullable=False)
+    language = Column(String(10), default="ko", nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
