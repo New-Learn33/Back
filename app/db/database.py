@@ -59,6 +59,10 @@ def _migrate_missing_columns():
         ("users", "auto_save", "BOOLEAN NOT NULL DEFAULT TRUE"),
         ("users", "default_quality", "VARCHAR(20) NOT NULL DEFAULT 'high'"),
         ("users", "language", "VARCHAR(10) NOT NULL DEFAULT 'ko'"),
+        ("presets", "art_style", "VARCHAR(50) NULL"),
+        ("presets", "genre", "VARCHAR(50) NULL"),
+        ("presets", "image_quality", "VARCHAR(20) NULL"),
+        ("presets", "motion_intensity", "VARCHAR(20) NULL"),
     ]
     for table, column, col_type in migrations:
         if table in insp.get_table_names():
