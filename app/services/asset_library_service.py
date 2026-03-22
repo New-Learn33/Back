@@ -17,28 +17,33 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # app/
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 TEMPLATES_DIR = os.path.join(STATIC_DIR, "templates")
-
-CATEGORY_ID_TO_FOLDER = {
-    1: "ani",
-    2: "hero",
-    3: "game",
-    4: "fantasy",
-}
-
-CATEGORY_FOLDER_TO_HINT = {
-    "ani": "anime style",
-    "hero": "superhero style",
-    "game": "game character style",
-    "fantasy": "fantasy character style",
-}
+ASSET_FOLDER = "assets"
+DEFAULT_CATEGORY_ID = 0
+DEFAULT_CATEGORY_HINT = "general character style"
 
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
 def ensure_dirs():
     os.makedirs(TEMPLATES_DIR, exist_ok=True)
-    for folder in CATEGORY_ID_TO_FOLDER.values():
-        os.makedirs(os.path.join(TEMPLATES_DIR, folder), exist_ok=True)
+    os.makedirs(os.path.join(TEMPLATES_DIR, ASSET_FOLDER), exist_ok=True)
+
+
+def normalize_tags(tags: List[str] | None) -> List[str]:
+    if not tags:
+        return []
+
+    seen = set()
+    normalized: List[str] = []
+    for tag in tags:
+        cleaned = (tag or "").strip().lower()
+        if not cleaned:
+            continue
+        if cleaned in seen:
+            continue
+        seen.add(cleaned)
+        normalized.append(cleaned)
+    return normalized
 
 
 def encode_image_to_base64(image_path: str) -> str:
@@ -77,9 +82,10 @@ def parse_json_text(text: str) -> dict:
     return json.loads(text)
 
 
-def analyze_character(image_path: str, folder_name: str, asset_name: str, image_url: str) -> dict:
+def analyze_character(image_path: str, asset_name: str, image_url: str, tags: List[str] | None = None) -> dict:
     image_b64 = encode_image_to_base64(image_path)
-    category_hint = CATEGORY_FOLDER_TO_HINT[folder_name]
+    normalized_tags = normalize_tags(tags)
+    category_hint = f"tag-driven style: {', '.join(normalized_tags)}" if normalized_tags else DEFAULT_CATEGORY_HINT
     character_name = sanitize_stem(asset_name)
 
     prompt = f"""
@@ -142,7 +148,7 @@ Rules:
     parsed = parse_json_text(response.output_text)
 
     return {
-        "id": f"{folder_name}_{character_name}_{uuid.uuid4().hex[:8]}",
+        "id": f"asset_{character_name}_{uuid.uuid4().hex[:8]}",
         "name": asset_name,
         "image_url": image_url,
         "category_hint": category_hint,
@@ -169,10 +175,8 @@ Rules:
     }
 
 
-def save_uploaded_file(file_bytes: bytes, original_filename: str, category_id: int) -> tuple[str, str]:
+def save_uploaded_file(file_bytes: bytes, original_filename: str) -> tuple[str, str]:
     ensure_dirs()
-
-    folder_name = CATEGORY_ID_TO_FOLDER[category_id]
     ext = os.path.splitext(original_filename)[1].lower()
 
     if ext not in ALLOWED_EXTENSIONS:
@@ -181,13 +185,13 @@ def save_uploaded_file(file_bytes: bytes, original_filename: str, category_id: i
     safe_name = sanitize_stem(os.path.splitext(original_filename)[0])
     unique_filename = f"{safe_name}_{uuid.uuid4().hex[:8]}{ext}"
 
-    save_dir = os.path.join(TEMPLATES_DIR, folder_name)
+    save_dir = os.path.join(TEMPLATES_DIR, ASSET_FOLDER)
     save_path = os.path.join(save_dir, unique_filename)
 
     with open(save_path, "wb") as f:
         f.write(file_bytes)
 
-    image_url = f"/static/templates/{folder_name}/{unique_filename}"
+    image_url = f"/static/templates/{ASSET_FOLDER}/{unique_filename}"
     return save_path, image_url
 
 
@@ -205,7 +209,8 @@ def asset_to_dict(asset: Asset) -> dict:
         "outfit": asset.outfit,
         "style_keywords": asset.style_keywords,
         "forbidden_changes": asset.forbidden_changes,
-        "custom_tags": asset.custom_tags or [],
+        "custom_tags": normalize_tags(asset.custom_tags),
+        "tags": normalize_tags((asset.custom_tags or []) + (asset.style_keywords or [])),
         "file_size": asset.file_size or 0,
         "created_at": asset.created_at.isoformat() if asset.created_at else None,
     }
@@ -216,29 +221,27 @@ def create_asset_profile(
     user_id: int,
     file_bytes: bytes,
     original_filename: str,
-    category_id: int,
     asset_name: str | None = None,
+    tags: List[str] | None = None,
+    category_id: int | None = None,
 ) -> dict:
-    if category_id not in CATEGORY_ID_TO_FOLDER:
-        raise ValueError("유효하지 않은 category_id 입니다.")
-
     final_asset_name = asset_name or sanitize_stem(original_filename)
+    normalized_tags = normalize_tags(tags)
 
-    saved_path, image_url = save_uploaded_file(file_bytes, original_filename, category_id)
-    folder_name = CATEGORY_ID_TO_FOLDER[category_id]
+    saved_path, image_url = save_uploaded_file(file_bytes, original_filename)
 
     profile = analyze_character(
         image_path=saved_path,
-        folder_name=folder_name,
         asset_name=final_asset_name,
         image_url=image_url,
+        tags=normalized_tags,
     )
 
     # DB에 저장
     asset = Asset(
         id=profile["id"],
         user_id=user_id,
-        category_id=category_id,
+        category_id=DEFAULT_CATEGORY_ID,
         name=profile["name"],
         image_url=profile["image_url"],
         category_hint=profile["category_hint"],
@@ -248,6 +251,7 @@ def create_asset_profile(
         outfit=profile["outfit"],
         style_keywords=profile["style_keywords"],
         forbidden_changes=profile["forbidden_changes"],
+        custom_tags=normalized_tags,
         file_size=len(file_bytes),
     )
     db.add(asset)
@@ -286,11 +290,9 @@ def delete_asset_profile(db: Session, asset_id: str, user_id: int) -> bool:
     return True
 
 
-def get_asset_profiles(db: Session, user_id: int, category_id: int | None = None) -> List[dict]:
+def get_asset_profiles(db: Session, user_id: int) -> List[dict]:
     """유저의 에셋 목록 조회"""
     query = db.query(Asset).filter(Asset.user_id == user_id)
-    if category_id is not None:
-        query = query.filter(Asset.category_id == category_id)
 
     assets = query.order_by(Asset.created_at.desc()).all()
     return [asset_to_dict(a) for a in assets]

@@ -8,7 +8,7 @@ from app.api.v1.endpoints.auth import get_current_user
 from app.models.user import User, STORAGE_LIMIT_BYTES
 from app.models.asset import Asset
 from app.services.asset_library_service import (
-    create_asset_profile, get_asset_profiles, delete_asset_profile, asset_to_dict
+    create_asset_profile, get_asset_profiles, delete_asset_profile, asset_to_dict, normalize_tags
 )
 
 router = APIRouter()
@@ -18,10 +18,17 @@ class UpdateTagsRequest(BaseModel):
     tags: List[str]
 
 
+def parse_tags_form(tags: str | None) -> List[str]:
+    if not tags:
+        return []
+    return normalize_tags(tags.split(","))
+
+
 @router.post("/upload")
 async def upload_asset(
     file: UploadFile = File(...),
-    category_id: int = Form(...),
+    category_id: int | None = Form(None),
+    tags: str | None = Form(None),
     name: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -48,8 +55,9 @@ async def upload_asset(
             user_id=current_user.id,
             file_bytes=content,
             original_filename=file.filename,
-            category_id=category_id,
+            category_id=category_id,  # 하위 호환용(현재 에셋 분류에는 사용하지 않음)
             asset_name=name,
+            tags=parse_tags_form(tags),
         )
 
         # storage_used 업데이트
@@ -70,7 +78,6 @@ async def upload_asset(
 
 @router.get("")
 def list_assets(
-    category_id: int | None = None,
     tag: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -79,13 +86,15 @@ def list_assets(
         return current_user
 
     try:
-        result = get_asset_profiles(db=db, user_id=current_user.id, category_id=category_id)
+        result = get_asset_profiles(db=db, user_id=current_user.id)
 
         # 태그 필터링
         if tag:
+            normalized_lookup = normalize_tags([tag])
+            lookup_tag = normalized_lookup[0] if normalized_lookup else ""
             result = [
                 a for a in result
-                if tag in (a.get("custom_tags") or []) or tag in (a.get("style_keywords") or [])
+                if lookup_tag in (a.get("tags") or [])
             ]
 
         return {
@@ -111,7 +120,7 @@ def update_asset_tags(
     if not asset:
         raise HTTPException(status_code=404, detail="에셋을 찾을 수 없습니다.")
 
-    asset.custom_tags = request.tags
+    asset.custom_tags = normalize_tags(request.tags)
     db.commit()
     db.refresh(asset)
 
