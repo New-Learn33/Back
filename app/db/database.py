@@ -63,6 +63,7 @@ def _migrate_missing_columns():
         ("presets", "genre", "VARCHAR(50) NULL"),
         ("presets", "image_quality", "VARCHAR(20) NULL"),
         ("presets", "motion_intensity", "VARCHAR(20) NULL"),
+        ("presets", "tags", "JSON NULL"),
     ]
     for table, column, col_type in migrations:
         if table in insp.get_table_names():
