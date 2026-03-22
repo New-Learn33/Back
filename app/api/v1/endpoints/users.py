@@ -276,16 +276,23 @@ def cancel_my_project(
         )
 
     # 완료/실패/취소된 작업은 DB에서 삭제
-    # 연결된 Video 및 관련 데이터 먼저 삭제
-    video = db.query(Video).filter(Video.job_id == job.id).first()
-    if video:
-        db.query(Comment).filter(Comment.video_id == video.id).delete()
-        db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
-        db.query(Notification).filter(Notification.video_id == video.id).delete()
-        db.delete(video)
+    try:
+        # job_id 기반 알림 먼저 삭제
+        db.query(Notification).filter(Notification.job_id == job.id).delete()
 
-    db.delete(job)
-    db.commit()
+        # 연결된 Video 및 관련 데이터 삭제
+        video = db.query(Video).filter(Video.job_id == job.id).first()
+        if video:
+            db.query(Comment).filter(Comment.video_id == video.id).delete()
+            db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
+            db.query(Notification).filter(Notification.video_id == video.id).delete()
+            db.delete(video)
+
+        db.delete(job)
+        db.commit()
+    except Exception:
+        db.rollback()
+        return error_response(500, "SERVER_001", "삭제 중 오류가 발생했습니다.")
 
     return success_response(
         data={"job_id": job_id, "status": "deleted"},
