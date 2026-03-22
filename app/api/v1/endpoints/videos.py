@@ -11,6 +11,9 @@ from app.core.security import decode_access_token
 from app.db.database import get_db
 from app.models.generation_job import GenerationJob
 from app.models.video import Video
+from app.models.comment import Comment
+from app.models.video_like import VideoLike
+from app.models.notification import Notification
 from app.schemas.video import (
     VideoDetailResponse,
     VideoListResponse,
@@ -266,6 +269,11 @@ def delete_video(
         return error_response(404, "REQUEST_007", "영상을 찾을 수 없거나 권한이 없습니다.")
 
     job_id = video.job_id
+
+    # 연결된 댓글, 좋아요, 알림 먼저 삭제
+    db.query(Comment).filter(Comment.video_id == video.id).delete()
+    db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
+    db.query(Notification).filter(Notification.video_id == video.id).delete()
 
     # Video 삭제
     db.delete(video)

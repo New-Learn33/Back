@@ -14,6 +14,10 @@ from app.schemas.user import (
 )
 from app.models.user import STORAGE_LIMIT_BYTES
 from app.models.generation_job import GenerationJob
+from app.models.video import Video
+from app.models.comment import Comment
+from app.models.video_like import VideoLike
+from app.models.notification import Notification
 from app.services.comment_service import list_comments_by_user
 from app.services.video_service import list_liked_videos_by_user, list_videos_by_user
 from app.utils.error_response import error_response
@@ -272,6 +276,14 @@ def cancel_my_project(
         )
 
     # 완료/실패/취소된 작업은 DB에서 삭제
+    # 연결된 Video 및 관련 데이터 먼저 삭제
+    video = db.query(Video).filter(Video.job_id == job.id).first()
+    if video:
+        db.query(Comment).filter(Comment.video_id == video.id).delete()
+        db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
+        db.query(Notification).filter(Notification.video_id == video.id).delete()
+        db.delete(video)
+
     db.delete(job)
     db.commit()
 
