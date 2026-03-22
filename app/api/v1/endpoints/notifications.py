@@ -36,7 +36,7 @@ def serialize_notification_item(notification):
         "comment_id": notification.comment_id,
         "job_id": notification.job_id,
         "is_read": notification.is_read,
-        "created_at": notification.created_at.isoformat() if notification.created_at else None,
+        "created_at": (notification.created_at.isoformat() + "+00:00") if notification.created_at else None,
     }
 
 
