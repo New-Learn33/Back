@@ -109,8 +109,11 @@ Image-friendly scene rules (IMPORTANT — follow these to produce better illustr
 - Each subtitle_text should be a clear, single-action visual description that an AI image generator can illustrate well.
 """
 
+    tags = [t for t in getattr(request, "tags", []) if str(t).strip()]
+    tags_text = ", ".join(tags) if tags else "(지정된 태그 없음)"
+
     user_prompt = f"""
-카테고리 ID: {request.category_id}
+태그: {tags_text}
 사용자 프롬프트: {request.prompt}
 
 위 정보를 바탕으로 6컷 만화 대사와 장면 설명을 생성해라.

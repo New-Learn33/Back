@@ -9,7 +9,9 @@ class SceneScriptItem(BaseModel):
 
 
 class GenerationRequest(BaseModel):
-    category_id: int = Field(..., example=1)
+    # tags 기반 생성이 기본, category_id는 하위 호환
+    tags: List[str] = Field(default_factory=list, example=["hero", "fantasy"])
+    category_id: Optional[int] = Field(default=None, example=1)
     prompt: str = Field(..., example="세상이 멸망하는데 히어로가 늦잠을 잤다")
     art_style: str = Field(default="webtoon", example="webtoon")
     genre: str = Field(default="auto", example="comedy")
@@ -31,7 +33,8 @@ class SelectedTemplateImage(BaseModel):
 class GenerationData(BaseModel):
     job_id: int
     title: str
-    category_id: int
+    tags: List[str] = Field(default_factory=list)
+    category_id: Optional[int] = None
     selected_template_image: Optional[SelectedTemplateImage] = None
     scenes: List[SceneScriptItem]
     images: List[ImageResultItem]

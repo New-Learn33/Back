@@ -279,6 +279,7 @@ from fastapi.responses import JSONResponse
 
 from app.schemas.generation_schema import GenerationTextUpdateRequest
 from app.models.generation_scene import GenerationScene
+from app.services.asset_library_service import normalize_tags
 
 from datetime import datetime, timedelta
 from sqlalchemy import func as sqlfunc
@@ -286,6 +287,20 @@ from sqlalchemy import func as sqlfunc
 DAILY_GENERATION_LIMIT = 3
 
 router = APIRouter()
+
+
+def _request_tags(request: GenerationRequest) -> list[str]:
+    return normalize_tags(getattr(request, "tags", []) or [])
+
+
+def _resolve_category_id(selected_character: dict | None, fallback: int | None) -> int:
+    if selected_character:
+        raw = selected_character.get("category_id")
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            pass
+    return fallback or 0
 
 
 def check_daily_limit(db: Session, user_id: int):
@@ -329,7 +344,14 @@ def generate_content(
             f"하루 영상 생성 횟수({DAILY_GENERATION_LIMIT}회)를 초과했습니다. 내일 다시 시도해주세요."
         )
 
-    selected_character = pick_random_character(request.category_id, current_user.id, db)
+    request_tags = _request_tags(request)
+    selected_character = pick_random_character(
+        user_id=current_user.id,
+        db=db,
+        tags=request_tags,
+        category_id=request.category_id,
+    )
+    resolved_category_id = _resolve_category_id(selected_character, request.category_id)
     # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
     script_result = generate_six_cut_script(request, genre=request.genre)
@@ -338,7 +360,7 @@ def generate_content(
         user_id=current_user.id,
         title=script_result["title"],
         prompt=request.prompt,
-        category_id=request.category_id,
+        category_id=resolved_category_id,
         status="pending",
         progress=0
     )
@@ -410,7 +432,8 @@ def generate_content(
         "data": {
             "job_id": job_id,
             "title": script_result["title"],
-            "category_id": request.category_id,
+            "tags": request_tags,
+            "category_id": resolved_category_id,
             "selected_template_image": {
                 "id": selected_character["id"],
                 "name": selected_character["name"],
@@ -441,22 +464,29 @@ def generate_content_stream(
         )
 
     # 제너레이터 밖에서 미리 값 추출 (제너레이터 안에서 request 접근 시 문제 방지)
-    category_id = request.category_id
+    request_tags = _request_tags(request)
+    category_id = request.category_id or 0
     prompt_text = request.prompt
     art_style = request.art_style
     genre = request.genre
     image_quality = request.image_quality
 
-    selected_character = pick_random_character(category_id, current_user.id, db)
+    selected_character = pick_random_character(
+        user_id=current_user.id,
+        db=db,
+        tags=request_tags,
+        category_id=request.category_id,
+    )
+    category_id = _resolve_category_id(selected_character, request.category_id)
     # 에셋이 없으면 None → 프롬프트만으로 이미지 생성
 
     # request 데이터를 단순 객체로 복사
     class SimpleRequest:
-        def __init__(self, category_id, prompt):
-            self.category_id = category_id
+        def __init__(self, prompt, tags):
             self.prompt = prompt
+            self.tags = tags
 
-    req_copy = SimpleRequest(category_id, prompt_text)
+    req_copy = SimpleRequest(prompt_text, request_tags)
 
     def event_stream():
         try:
@@ -500,7 +530,7 @@ def generate_content_stream(
                 db_session.close()
 
             # 대사 결과 전송
-            yield f"data: {json.dumps({'type': 'script', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'scenes': script_result['scenes']}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'script', 'job_id': job_id, 'title': script_result['title'], 'tags': request_tags, 'category_id': category_id, 'scenes': script_result['scenes']}, ensure_ascii=False)}\n\n"
 
 
             total_count = len(script_result["scenes"])
@@ -588,7 +618,7 @@ def generate_content_stream(
 
             # 완료
             template_image = {'id': selected_character['id'], 'name': selected_character['name'], 'image_url': selected_character['image_url']} if selected_character else None
-            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'category_id': category_id, 'selected_template_image': template_image, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'job_id': job_id, 'title': script_result['title'], 'tags': request_tags, 'category_id': category_id, 'selected_template_image': template_image, 'scenes': script_result['scenes'], 'images': uploaded_images}, ensure_ascii=False)}\n\n"
 
         except Exception as e:
             import traceback
