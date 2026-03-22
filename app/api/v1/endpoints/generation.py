@@ -1,247 +1,3 @@
-# 기본 파일, 테스트를 위해 주석 처리해둠
-# 아래에 테스트용 코드 있음
-
-# import random
-# from fastapi import APIRouter, HTTPException
-
-# from app.schemas.generation_schema import GenerationRequest, GenerationResponse
-# from app.services.script_service import generate_three_cut_script
-# from app.services.image_service import generate_three_cut_images
-
-# router = APIRouter()
-
-# CATEGORY_TEMPLATE_MAP = {
-#     1: [
-#         {
-#             "id": 101,
-#             "name": "애니 캐릭터 1",
-#             "image_url": "https://example.com/anime1.png",
-#             "category_hint": "anime style",
-#             "character_name": "anime_hero_1",
-#         },
-#         {
-#             "id": 102,
-#             "name": "애니 캐릭터 2",
-#             "image_url": "https://example.com/anime2.png",
-#             "category_hint": "anime style",
-#             "character_name": "anime_hero_2",
-#         },
-#     ],
-#     2: [
-#         {
-#             "id": 201,
-#             "name": "히어로 캐릭터 1",
-#             "image_url": "https://example.com/hero1.png",
-#             "category_hint": "superhero style",
-#             "character_name": "hero_main_1",
-#         },
-#         {
-#             "id": 202,
-#             "name": "히어로 캐릭터 2",
-#             "image_url": "https://example.com/hero2.png",
-#             "category_hint": "superhero style",
-#             "character_name": "hero_main_2",
-#         },
-#     ],
-#     3: [
-#         {
-#             "id": 301,
-#             "name": "게임 캐릭터 1",
-#             "image_url": "https://example.com/game1.png",
-#             "category_hint": "game cinematic style",
-#             "character_name": "game_character_1",
-#         },
-#         {
-#             "id": 302,
-#             "name": "게임 캐릭터 2",
-#             "image_url": "https://example.com/game2.png",
-#             "category_hint": "game cinematic style",
-#             "character_name": "game_character_2",
-#         },
-#     ],
-#     4: [
-#         {
-#             "id": 401,
-#             "name": "판타지 캐릭터 1",
-#             "image_url": "https://example.com/fantasy1.png",
-#             "category_hint": "fantasy epic style",
-#             "character_name": "fantasy_wizard_1",
-#         },
-#         {
-#             "id": 402,
-#             "name": "판타지 캐릭터 2",
-#             "image_url": "https://example.com/fantasy2.png",
-#             "category_hint": "fantasy epic style",
-#             "character_name": "fantasy_knight_2",
-#         },
-#     ],
-# }
-
-
-# @router.post("", response_model=GenerationResponse)
-# def generate_content(request: GenerationRequest):
-#     template_candidates = CATEGORY_TEMPLATE_MAP.get(request.category_id)
-
-#     if not template_candidates:
-#         raise HTTPException(status_code=400, detail="유효하지 않은 category_id 입니다.")
-
-#     selected_template = random.choice(template_candidates)
-
-#     script_result = generate_three_cut_script(request)
-
-#     # TODO: 나중에 generation_jobs insert 후 실제 DB id 사용
-#     job_id = 1
-
-#     image_results = generate_three_cut_images(
-#         job_id=job_id,
-#         template_info=selected_template,
-#         scenes=script_result["scenes"],
-#     )
-
-#     return {
-#         "success": True,
-#         "message": "3컷 생성 성공",
-#         "data": {
-#             "job_id": job_id,
-#             "title": script_result["title"],
-#             "category_id": request.category_id,
-#             "selected_template_image": {
-#                 "id": selected_template["id"],
-#                 "name": selected_template["name"],
-#                 "image_url": selected_template["image_url"],
-#             },
-#             "scenes": script_result["scenes"],
-#             "images": [
-#                 {
-#                     "scene_order": img["scene_order"],
-#                     "image_url": img["image_url"],
-#                 }
-#                 for img in image_results
-#             ],
-#         },
-#     }
-
-
-
-
-# # 테스트용
-# import random, os
-# from app.models.video import Video
-# from fastapi import APIRouter, Depends
-
-# from app.schemas.generation_schema import GenerationRequest, GenerationResponse
-# from app.schemas.generation_schema import RenderSubtitleRequest, RenderVideoRequest
-# from app.schemas.generation_schema import ThumbnailSelectRequest
-# from app.services.script_service import generate_three_cut_script
-# from app.services.image_service import generate_three_cut_images
-# from app.services.subtitle_render_service import render_subtitle_image
-# from app.services.video_render_service import create_video_from_images
-# from app.utils.error_response import error_response
-# from app.utils.success_response import success_response
-# from sqlalchemy.orm import Session
-# from app.db.database import get_db
-# from app.models.generation_job import GenerationJob
-
-# router = APIRouter()
-
-# CATEGORY_TEMPLATE_MAP = {
-#     1: [
-#         {
-#             "id": 101,
-#             "name": "테스트 애니 캐릭터",
-#             "image_url": "/static/templates/test_character.png",
-#             "category_hint": "anime style",
-#             "character_name": "test_anime_character",
-#         }
-#     ],
-#     2: [
-#         {
-#             "id": 201,
-#             "name": "테스트 히어로 캐릭터",
-#             "image_url": "/static/templates/test_character.png",
-#             "category_hint": "superhero style",
-#             "character_name": "test_hero_character",
-#         }
-#     ],
-#     3: [
-#         {
-#             "id": 301,
-#             "name": "테스트 게임 캐릭터",
-#             "image_url": "/static/templates/test_character.png",
-#             "category_hint": "game cinematic style",
-#             "character_name": "test_game_character",
-#         }
-#     ],
-#     4: [
-#         {
-#             "id": 401,
-#             "name": "테스트 판타지 캐릭터",
-#             "image_url": "/static/templates/test_character.png",
-#             "category_hint": "fantasy epic style",
-#             "character_name": "test_fantasy_character",
-#         }
-#     ],
-# }
-
-
-# @router.post("", response_model=GenerationResponse)
-# def generate_content(request: GenerationRequest, db: Session = Depends(get_db)):
-#     template_candidates = CATEGORY_TEMPLATE_MAP.get(request.category_id)
-
-#     if not template_candidates:
-#         return error_response(400, "REQUEST_001", "유효하지 않은 category_id 입니다.")
-    
-#     selected_template = random.choice(template_candidates)
-
-#     script_result = generate_three_cut_script(request)
-
-#     job = GenerationJob(
-#         user_id=1,  # 테스트용, 나중에 현재 로그인 유저 id로 교체
-#         title=script_result["title"],
-#         prompt=request.prompt,
-#         category_id=request.category_id,
-#         status="pending",
-#         progress=0
-#     )
-#     db.add(job)
-#     db.commit()
-#     db.refresh(job)
-
-#     job_id = job.id
-
-#     image_results = generate_three_cut_images(
-#         job_id=job_id,
-#         template_info=selected_template,
-#         scenes=script_result["scenes"],
-#     )
-
-#     job.status = "processing"
-#     job.progress = 30
-#     db.commit()
-
-#     return {
-#         "success": True,
-#         "message": "3컷 생성 성공",
-#         "data": {
-#             "job_id": job_id,
-#             "title": script_result["title"],
-#             "category_id": request.category_id,
-#             "selected_template_image": {
-#                 "id": selected_template["id"],
-#                 "name": selected_template["name"],
-#                 "image_url": selected_template["image_url"],
-#             },
-#             "scenes": script_result["scenes"],
-#             "images": [
-#                 {
-#                     "scene_order": img["scene_order"],
-#                     "image_url": img["image_url"],
-#                 }
-#                 for img in image_results
-#             ],
-#         },
-#     }
-
 import os
 import json
 import random as _random
@@ -410,7 +166,7 @@ def generate_content(
             final_url = uploaded["url"]
             total_uploaded_size += uploaded.get("size", 0)
         except Exception as r2_err:
-            print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+            pass  # R2 업로드 실패 시 로컬 URL 사용
             final_url = img["image_url"]
 
         uploaded_images.append({
@@ -566,7 +322,7 @@ def generate_content_stream(
                     final_url = uploaded["url"]
                     stream_upload_size += uploaded.get("size", 0)
                 except Exception as r2_err:
-                    print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+                    pass  # R2 업로드 실패 시 로컬 URL 사용
                     final_url = img_result["image_url"]
 
                 image_data = {
@@ -683,7 +439,7 @@ def render_subtitles(
                 final_url = uploaded["url"]
                 render_total_size += uploaded.get("size", 0)
             except Exception as r2_err:
-                print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+                pass  # R2 업로드 실패 시 로컬 URL 사용
                 final_url = f"/static/rendered/{request.job_id}_{img.scene_order}.png"
 
             results.append({
@@ -759,7 +515,7 @@ def render_video(
             video_url = uploaded_video["url"]
             add_storage_used(db, current_user.id, uploaded_video.get("size", 0))
         except Exception as r2_err:
-            print(f"R2 업로드 실패, 로컬 URL 사용: {r2_err}")
+            pass  # R2 업로드 실패 시 로컬 URL 사용
             video_url = f"/static/videos/{request.job_id}.mp4"
 
         job.video_url = video_url
@@ -1088,10 +844,7 @@ def render_video_with_svd(
             "SVD 기반 영상 생성 성공"
         )
 
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"[SVD ERROR] {type(e).__name__}: {e}")
+    except Exception:
         job.status = "failed"
         job.progress = 0
         db.commit()

@@ -71,7 +71,6 @@ def _migrate_missing_columns():
             if column not in existing:
                 with engine.begin() as conn:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
-                    print(f"[migrate] Added column {table}.{column}")
 
 
 def _fix_thumbnail_urls():
@@ -105,10 +104,8 @@ def _fix_thumbnail_urls():
 
         if fixed:
             db.commit()
-            print(f"[fix] Fixed {fixed} video thumbnail URLs ({len(broken)} rendered→generated, {len(empty)} empty→generated)")
     except Exception as e:
         db.rollback()
-        print(f"[fix] Thumbnail URL fix error: {e}")
     finally:
         db.close()
 
@@ -133,8 +130,6 @@ def _sync_storage_usage():
                         asset.file_size = os.path.getsize(file_path)
                         updated_count += 1
             db.commit()
-            if updated_count:
-                print(f"[sync] Updated file_size for {updated_count}/{len(zero_assets)} assets")
 
         # 2) 유저별 storage_used 보정 (에셋 합계가 현재 storage_used보다 크면 갱신, 작으면 유지)
         # 생성된 이미지/영상 용량은 별도로 누적되므로 에셋 합계로 덮어쓰면 안 됨
@@ -156,10 +151,7 @@ def _sync_storage_usage():
                     user.storage_used = asset_total
                     updated_users += 1
         db.commit()
-        if updated_users:
-            print(f"[sync] Updated storage_used for {updated_users} users (asset totals were higher)")
     except Exception as e:
         db.rollback()
-        print(f"[sync] Storage sync error: {e}")
     finally:
         db.close()
