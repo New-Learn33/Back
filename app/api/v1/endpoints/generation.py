@@ -40,7 +40,7 @@ from app.services.asset_library_service import normalize_tags
 from datetime import datetime, timedelta
 from sqlalchemy import func as sqlfunc
 
-DAILY_GENERATION_LIMIT = 3
+DAILY_GENERATION_LIMIT = 5
 
 router = APIRouter()
 
