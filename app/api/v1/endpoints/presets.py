@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
 from app.db.database import get_db
 from app.models.preset import Preset
+from app.models.user import User
+from app.api.v1.endpoints.auth import get_current_user
 from app.services.asset_library_service import normalize_tags
 from app.utils.success_response import success_response
 from app.utils.error_response import error_response
@@ -57,8 +60,10 @@ class PresetUpdate(BaseModel):
 
 # 프리셋 목록 조회
 @router.get("")
-def get_presets(db: Session = Depends(get_db)):
-    user_id = 1  # TODO: 인증
+def get_presets(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+    user_id = current_user.id
     presets = db.query(Preset).filter(Preset.user_id == user_id).order_by(Preset.updated_at.desc()).all()
     return success_response(
         {"presets": [serialize_preset(p) for p in presets]},
@@ -68,8 +73,10 @@ def get_presets(db: Session = Depends(get_db)):
 
 # 프리셋 저장
 @router.post("")
-def create_preset(request: PresetCreate, db: Session = Depends(get_db)):
-    user_id = 1  # TODO: 인증
+def create_preset(request: PresetCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+    user_id = current_user.id
 
     try:
         normalized_tags = normalize_tags(request.tags)
@@ -98,8 +105,10 @@ def create_preset(request: PresetCreate, db: Session = Depends(get_db)):
 
 # 프리셋 수정
 @router.patch("/{preset_id}")
-def update_preset(preset_id: int, request: PresetUpdate, db: Session = Depends(get_db)):
-    user_id = 1  # TODO: 인증
+def update_preset(preset_id: int, request: PresetUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+    user_id = current_user.id
 
     preset = db.query(Preset).filter(Preset.id == preset_id, Preset.user_id == user_id).first()
     if not preset:
@@ -126,8 +135,10 @@ def update_preset(preset_id: int, request: PresetUpdate, db: Session = Depends(g
 
 # 프리셋 삭제
 @router.delete("/{preset_id}")
-def delete_preset(preset_id: int, db: Session = Depends(get_db)):
-    user_id = 1  # TODO: 인증
+def delete_preset(preset_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if isinstance(current_user, JSONResponse):
+        return current_user
+    user_id = current_user.id
 
     preset = db.query(Preset).filter(Preset.id == preset_id, Preset.user_id == user_id).first()
     if not preset:
