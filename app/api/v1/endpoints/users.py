@@ -211,6 +211,7 @@ def get_my_projects(
     for v in videos:
         projects.append({
             "id": v.id,
+            "job_id": v.job_id,
             "type": "video",
             "title": v.title,
             "category_id": v.category_id,
