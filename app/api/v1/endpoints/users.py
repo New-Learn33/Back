@@ -18,6 +18,7 @@ from app.models.video import Video
 from app.models.comment import Comment
 from app.models.video_like import VideoLike
 from app.models.notification import Notification
+from app.models.generation_scene import GenerationScene
 from app.services.comment_service import list_comments_by_user
 from app.services.video_service import list_liked_videos_by_user, list_videos_by_user
 from app.utils.error_response import error_response
@@ -287,6 +288,9 @@ def cancel_my_project(
             db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
             db.query(Notification).filter(Notification.video_id == video.id).delete()
             db.delete(video)
+
+        # 연결된 GenerationScene 삭제
+        db.query(GenerationScene).filter(GenerationScene.job_id == job.id).delete()
 
         db.delete(job)
         db.commit()

@@ -14,6 +14,7 @@ from app.models.video import Video
 from app.models.comment import Comment
 from app.models.video_like import VideoLike
 from app.models.notification import Notification
+from app.models.generation_scene import GenerationScene
 from app.schemas.video import (
     VideoDetailResponse,
     VideoListResponse,
@@ -277,6 +278,9 @@ def delete_video(
 
     # Video 삭제
     db.delete(video)
+
+    # 연결된 GenerationScene 삭제
+    db.query(GenerationScene).filter(GenerationScene.job_id == job_id).delete()
 
     # 연결된 GenerationJob도 삭제
     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
