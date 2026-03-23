@@ -279,25 +279,29 @@ def cancel_my_project(
 
     # 완료/실패/취소된 작업은 DB에서 삭제
     try:
-        # job_id 기반 알림 먼저 삭제
-        db.query(Notification).filter(Notification.job_id == job.id).delete()
-
         # 연결된 Video 및 관련 데이터 삭제
         video = db.query(Video).filter(Video.job_id == job.id).first()
         if video:
-            db.query(Comment).filter(Comment.video_id == video.id).delete()
-            db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
-            db.query(Notification).filter(Notification.video_id == video.id).delete()
+            db.query(Comment).filter(Comment.video_id == video.id).delete(synchronize_session=False)
+            db.query(VideoLike).filter(VideoLike.video_id == video.id).delete(synchronize_session=False)
+            db.query(Notification).filter(Notification.video_id == video.id).delete(synchronize_session=False)
             db.delete(video)
+            db.flush()
+
+        # job_id 기반 알림 삭제
+        db.query(Notification).filter(Notification.job_id == job.id).delete(synchronize_session=False)
 
         # 연결된 GenerationScene 삭제
-        db.query(GenerationScene).filter(GenerationScene.job_id == job.id).delete()
+        db.query(GenerationScene).filter(GenerationScene.job_id == job.id).delete(synchronize_session=False)
 
+        # GenerationJob 삭제
         db.delete(job)
         db.commit()
-    except Exception:
+    except Exception as e:
         db.rollback()
-        return error_response(500, "SERVER_001", "삭제 중 오류가 발생했습니다.")
+        import traceback
+        traceback.print_exc()
+        return error_response(500, "SERVER_001", f"삭제 중 오류가 발생했습니다: {str(e)}")
 
     return success_response(
         data={"job_id": job_id, "status": "deleted"},

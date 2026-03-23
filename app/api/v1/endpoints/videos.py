@@ -271,23 +271,33 @@ def delete_video(
 
     job_id = video.job_id
 
-    # 연결된 댓글, 좋아요, 알림 먼저 삭제
-    db.query(Comment).filter(Comment.video_id == video.id).delete()
-    db.query(VideoLike).filter(VideoLike.video_id == video.id).delete()
-    db.query(Notification).filter(Notification.video_id == video.id).delete()
+    try:
+        # 연결된 댓글, 좋아요, 알림 먼저 삭제
+        db.query(Comment).filter(Comment.video_id == video.id).delete(synchronize_session=False)
+        db.query(VideoLike).filter(VideoLike.video_id == video.id).delete(synchronize_session=False)
+        db.query(Notification).filter(Notification.video_id == video.id).delete(synchronize_session=False)
 
-    # Video 삭제
-    db.delete(video)
+        # Video 삭제
+        db.delete(video)
+        db.flush()
 
-    # 연결된 GenerationScene 삭제
-    db.query(GenerationScene).filter(GenerationScene.job_id == job_id).delete()
+        # job_id 기반 알림 삭제
+        db.query(Notification).filter(Notification.job_id == job_id).delete(synchronize_session=False)
 
-    # 연결된 GenerationJob도 삭제
-    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-    if job:
-        db.delete(job)
+        # 연결된 GenerationScene 삭제
+        db.query(GenerationScene).filter(GenerationScene.job_id == job_id).delete(synchronize_session=False)
 
-    db.commit()
+        # 연결된 GenerationJob도 삭제
+        job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+        if job:
+            db.delete(job)
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
+        return error_response(500, "SERVER_001", f"삭제 중 오류: {str(e)}")
 
     return success_response(
         data={"video_id": video_id, "status": "deleted"},
